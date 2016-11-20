@@ -15,14 +15,15 @@ K_sub = np.vstack((K[1:], np.array([0] * N)))
 K = -2 * K + K_sub + K_sub.T
 
 dx = L/N
-psi_dot = dx**-2 * np.dot(K, psi)
+psi_2dot = dx**-2 * np.dot(K, psi)
 
 
-plt.plot(x, psi)
-plt.plot(x, psi_dot)
+plt.plot(x, psi, label="psi")
+plt.plot(x, psi_2dot, label="psi_2dot")
 plt.xlim(-3.5, 3.5)
 plt.ylim(-2.5, 2)
 
+plt.legend()
 plt.show()
 
 

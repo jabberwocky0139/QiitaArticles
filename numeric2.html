@@ -12,10 +12,11 @@
 <!---
   NumPyを用いた数値計算の高速化 : 応用
 -->
-<p><a href="http://qiita.com/jabberwocky0139/items/c3620fb2f011f20a633b">NumPyを用いた数値計算の高速化 : 基礎</a>のつづきです.</p>
 <h1 id="対象">対象</h1>
 <p>Python及びNumPy初心者に向けて書いています. 「C言語は使えるけど最近Pythonを始めた」とか「Pythonらしい書き方がよくわからない」に該当する物理系の数値計算を目的とした方には特に有用かもしれません.</p>
 <p>また, 自分の不勉強のために間違った記述があるかもしれません. ご容赦ください.</p>
+<h1 id="あらまし">あらまし</h1>
+<p>内容は<a href="http://qiita.com/jabberwocky0139/items/c3620fb2f011f20a633b">NumPyを用いた数値計算の高速化 : 基礎</a>のつづきです. <code>ndarray</code>のユニバーサル関数や演算を用いて可能な限りforループを使わずに基礎的な数値計算のアルゴリズムを実装していきます.</p>
 <h1 id="微分">微分</h1>
 <p>物理の基礎方程式には微分がつきものです. 微分は線形写像なので行列方程式で記述できます. たとえばある関数の2回微分を計算するとしましょう. これを前進差分と後退差分を用いて表現することにします: <!---
 $$-\frac{1}{2}\frac{d^2}{dx^2}\psi(x) = E_n\psi(x)$$
@@ -26,13 +27,13 @@ $$-\frac{1}{2}\frac{d^2}{dx^2}\psi(x) = E_n\psi(x)$$
 <p>微分は行列形式で書くことができます:</p>
 <p><span class="math display">\[\frac{d^2}{dx^2}\psi(x) = \frac{1}{\Delta x^2}
 \begin{pmatrix}
--2\psi_0&amp;\psi_1&amp;0&amp;\cdots&amp;0\\ 
-\psi_0&amp;-2\psi_1 &amp;\psi_2&amp;\cdots&amp;0\\
-0 &amp; \psi_1&amp;-2\psi_2&amp;&amp; \vdots\\
-\vdots&amp;&amp;&amp;\ddots&amp;\psi_n\\
-0&amp; \cdots&amp; 0 &amp;\psi_{n-1}&amp; -2\psi_n
+\psi_{-1} -2\psi_0 + \psi_1\\
+\psi_0 -2\psi_1 + \psi_2\\
+\vdots\\
+\psi_{n-2} -2\psi_{n-1} + \psi_n\\
+\psi_{n-1} -2\psi_n + \psi_{n+1}
 \end{pmatrix}
-= \frac{1}{\Delta x^2}
+\simeq \frac{1}{\Delta x^2}
 \begin{pmatrix}
 -2&amp;1&amp;0&amp;\cdots&amp;0\\ 
 1&amp;-2 &amp;1&amp;\cdots&amp;0\\
@@ -49,7 +50,7 @@ $$-\frac{1}{2}\frac{d^2}{dx^2}\psi(x) = E_n\psi(x)$$
 \end{pmatrix}
 =K\psi
 \]</span></p>
-<p>はじっこで嫌なことが起きていますが, <span class="math inline">\(\Delta x\)</span>が小さければ大丈夫です.</p>
+<p>はじっこで嫌なことが起きていますが, <span class="math inline">\(\Delta x\)</span>が小さければ大丈夫です. さあ行列にできてしまえばこっちのものです.</p>
 <h2 id="実装">実装</h2>
 <p>Pythonで実装してあげます. 初期関数を適当に用意して差分化してあげます:</p>
 <pre class="py3"><code>&gt;&gt;&gt; import numpy as np
@@ -68,7 +69,7 @@ array([  4.78511739e-06,   7.81043424e-06,   1.26216247e-05,
          7.78844169e-05,   5.01626530e-05,   3.19865883e-05,
          2.01935578e-05,   1.26216247e-05,   7.81043424e-06,
          4.78511739e-06])</code></pre>
-<p>そして微分の行列を用意します. そのためには劣対角成分に値を格納しなければなりません. そこで<code>ndarray</code>のスライスと<code>vstack</code>を組み合わせます:</p>
+<p>そして微分の行列を用意します. そのためには劣対角成分に値を格納しなければなりません. そこで<code>ndarray</code>のスライスと<code>np.vstack</code>を組み合わせます:</p>
 <pre class="py3"><code>&gt;&gt;&gt; K = np.eye(N, N)
 &gt;&gt;&gt; K
 array([[ 1.,  0.,  0., ...,  0.,  0.,  0.],
@@ -96,12 +97,12 @@ array([[-2.,  1.,  0., ...,  0.,  0.,  0.],
        [ 0.,  0.,  0., ..., -2.,  1.,  0.],
        [ 0.,  0.,  0., ...,  1., -2.,  1.],
        [ 0.,  0.,  0., ...,  0.,  1., -2.]])</code></pre>
-<p>これで微分が実行できます:</p>
+<p>これで積を取れば2階微分完了です:</p>
 <pre class="py3"><code>dx = L/N
-psi_dot = dx**-2 * np.dot(K, psi)</code></pre>
+psi_2dot = dx**-2 * np.dot(K, psi)</code></pre>
 <div class="figure">
-<img src="figure1.png" alt="微分完了ですね" />
-<p class="caption">微分完了ですね</p>
+<img src="figure1.png" alt="forループを使わずに書けましたね." />
+<p class="caption">forループを使わずに書けましたね.</p>
 </div>
 </body>
 </html>
