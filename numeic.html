@@ -1,0 +1,151 @@
+<!---
+  NumPyを用いた数値計算の高速化 : 基礎
+-->
+<h1 id="対象">対象</h1>
+<p>Python及びNumPy初心者に向けて書いています. 「C言語は使えるけど最近Pythonを始めた」とか「Pythonらしい書き方がよくわからない」に該当する物理系の数値計算を目的とした方には特に有用かもしれません.</p>
+<p>また, 自分の不勉強のために間違った記述があるかもしれません. ご容赦ください.</p>
+<h1 id="あらまし">あらまし</h1>
+<p>Pythonは数値計算系のライブラリが非常に充実しており, かつ使いやすくまとまっています. その多くはFortranで書かれた遺産のラッパーだったりするのですが, C/C++などから呼ぶよりもとても簡単です. 例えばC/C++からLAPACK<a href="#fn1" class="footnoteRef" id="fnref1"><sup>1</sup></a>を呼んで固有値問題を計算しようとすると</p>
+<pre class="c++"><code>info = LAPACKE_zheevr(LAPACK_COL_MAJOR, &#39;V&#39;, &#39;A&#39;, &#39;L&#39;, H, (lapack_complex_double*)a, lda, vl, vu, il, iu, abstol, &amp;mm, w, (lapack_complex_double*)z, ldz, isuppz);</code></pre>
+<p>のように引数が多すぎて煩雑です. 引数が多いほど計算の自由度が増すとはいえ, あまり初心者向けには見えません. また, C/C++にはネイティブでcomplexに対応していないことから, ラッパーの内部で<code>lapack_complex_double</code>等の型がdefineされており, 混乱を招きやすいです. 一方Pythonでは非常に簡潔です:</p>
+<pre class="py3"><code>w, v = numpy.linalg.eig(H)</code></pre>
+<p>LAPACKにあるような引数もちゃんと用意されていますが<a href="#fn2" class="footnoteRef" id="fnref2"><sup>2</sup></a>, デフォルト値が設定されているので, 細かいことを考えずにただ解きたいだけならコレだけでいいのです. シンプルでいいですね. ちなみに各種ソルバーはNumPyよりもSciPyのもののほうが高性能なようです.</p>
+<p>こうなるといろいろな数値計算をPythonに任せたくなってくるのですが, この子にも欠点はあります. <strong>forループが死ぬほど遅いのです.</strong> いわゆる行列演算では3重程度のループは頻出ですし, 数値計算というのは「細かく差分化してループ処理」が基本なので, なかなかに致命的です<a href="#fn3" class="footnoteRef" id="fnref3"><sup>3</sup></a>. コンパイル言語ではないのでしょうがないとはいえ, 他のLL言語よりも遅い気がします. 行列演算のために</p>
+<pre class="py3"><code>for i in range(N):
+    for j in range(N):
+        for k in range(N):
+            c[i][j] = a[i][k] * b[k][j]</code></pre>
+<p>なんて書いたらもうおしまいです.</p>
+<h1 id="numpyの組み込み関数と演算">NumPyの組み込み関数と演算</h1>
+<p>ではどうするかというと, NumPyの組み込み関数(universal function)を活用します. <strong>NumPyの組み込み関数は, NumPy配列<code>ndarray</code>の各要素に対して作用し, 新しい<code>ndarray</code>を返してくれます.</strong> これがとても重要でして, テンソル演算におけるforループを駆逐する可能性を秘めています. 例えば<code>math.sin(cmath.sin)</code>はスカラーしか渡せませんが, <code>numpy.sin</code>は</p>
+<pre class="py3"><code>&gt;&gt;&gt; theta = numpy.array([numpy.pi/6, numpy.pi/4, numpy.pi])
+&gt;&gt;&gt; numpy.sin(theta) 
+array([  5.00000000e-01,   7.07106781e-01,   1.22464680e-16])</code></pre>
+<p>のように, NumPy配列を投げると各要素に<code>numpy.sin</code>を作用させてくれます. そして往々にしてこの手の処理はC/C++と遜色ないほど高速です. NumPyの主な実装はCやFortranであり, かつ線形演算ではBLAS<a href="#fn4" class="footnoteRef" id="fnref4"><sup>4</sup></a>/LAPACKが頑張ってくれているからです.</p>
+<p>また, <code>ndarray</code>の定義する四則演算も同様に高速かつ多様です.</p>
+<h1 id="その1-ベクトル">その1 : ベクトル</h1>
+<p>ベクトルに関する線形演算をforループ抜きで書いていきましょう. 内積・外積等の関数がちゃんと用意されているのは想定内なので, 以下では主に<code>ndarray</code>に対する和・積・商などがどのように定義されているのかを見ていきます. <strong><code>ndarray</code>に対する演算は, Python組み込みの<code>list</code>に対する演算とは全く異なります</strong> 以後<code>import numpy as np</code>のようにエイリアスを設定しています.</p>
+<h2 id="ベクトルとスカラー">ベクトルとスカラー</h2>
+<p>1次元の<code>ndarray</code>は一種のベクトルとみなしてもよいでしょう. スカラー(complex, float, int)は<code>ndarray</code>の全ての要素に対して作用します:</p>
+<pre class="py3"><code>&gt;&gt;&gt; a = np.array([1, 2, 3])
+&gt;&gt;&gt; a + 2
+array([3, 4, 5])
+&gt;&gt;&gt; a * (3 + 4j)
+array([ 3. +4.j,  6. +8.j,  9.+12.j])</code></pre>
+<h2 id="ベクトル同士">ベクトル同士</h2>
+<p><code>ndarray</code>はインデックスの一致した要素同士が作用します:</p>
+<pre class="py3"><code>&gt;&gt;&gt; a = np.array([1, 2, 3])
+&gt;&gt;&gt; b = -np.array([1, 2, 3])
+&gt;&gt;&gt; a + b
+array([0, 0, 0])
+&gt;&gt;&gt; a * b
+array([-1, -4, -9])
+&gt;&gt;&gt; a / b
+array([-1., -1., -1.])</code></pre>
+<p>内積でも外積でもないところが面白いですね. 割り算まで定義できます. ある差分化した関数に微分演算を施す場合などによく使います. 次元の異なる<code>ndarray</code>同士の和・積は定義されません.</p>
+<h2 id="reshapeしたndarray同士">reshapeしたndarray同士</h2>
+<p><code>ndarray</code>には<code>reshape</code>と呼ばれるメソッドがあり, 例えば3×1のベクトルを1×3に組み替えるようなことなどができます. 縦ベクトルに対する横ベクトルのようなものですが, 積(*)の定義がベクトル空間のそれとは異なるので単純な対応はしていません. この<code>reshape</code>したベクトルとの積はとても面白いです:</p>
+<pre class="py3"><code>&gt;&gt;&gt; c = a.reshape(3, 1)
+&gt;&gt;&gt; c
+array([[1],
+       [2],
+       [3]])
+&gt;&gt;&gt; c + b
+array([[ 0, -1, -2],
+       [ 1,  0, -1],
+       [ 2,  1,  0]])
+&gt;&gt;&gt; c * b
+array([[-1, -2, -3],
+       [-2, -4, -6],
+       [-3, -6, -9]])</code></pre>
+<p>(3×1) + or * (1×3) = (3×3)のような規則を持ちつつ, しかし先の演算と同様, <strong>この演算は可換です</strong>. 初見では不思議に思うかもしれませんが, ちょっと眺めれば前節の規則を用いて説明が可能であることがわかると思います. これを利用すると<strong>行列の初期化すらforループを使わずに済む可能性を持っています</strong>. 巨大な行列をパラメータを変えるごとに都度初期化して計算を進めるようなタスクでは, 大きな威力を発揮します.</p>
+<p>これらの型に縛られない非常に柔軟な仕様は個人的にとても気に入っています<a href="#fn5" class="footnoteRef" id="fnref5"><sup>5</sup></a>. 他の言語よりも直感的な記述ができるように思います.</p>
+<h2 id="ベクトルの初期化">ベクトルの初期化</h2>
+<p>演算ではありませんが, そもそもベクトルを用意するのにforループを使っていては芸がありません. <code>ndarray</code>をつくる関数は幾つもありますが, よく使うものの一部を挙げます:</p>
+<pre class="py3"><code>&gt;&gt;&gt; L = 1
+&gt;&gt;&gt; N = 10
+&gt;&gt;&gt; np.linspace(-L/2, L/2, N)
+array([-0.5       , -0.38888889, -0.27777778, -0.16666667, -0.05555556,
+        0.05555556,  0.16666667,  0.27777778,  0.38888889,  0.5       ])
+
+&gt;&gt;&gt; dL = 0.2
+&gt;&gt;&gt; np.arange(-L/2, L/2, dL)
+array([-0.5, -0.3, -0.1,  0.1,  0.3])
+
+&gt;&gt;&gt; np.logspace(0, 1 ,10, base=np.e)
+array([ 1.        ,  1.11751907,  1.24884887,  1.39561243,  1.5596235 ,
+        1.742909  ,  1.94773404,  2.17662993,  2.43242545,  2.71828183])</code></pre>
+<p>スカラーやベクトルとの演算を組み合わせればforループがなくともなんとかなりそうですね.</p>
+<h1 id="その2-行列">その2 : 行列</h1>
+<p>ベクトルと話の流れはほぼ同じです. 行列積には専用の関数が用意されているので以下も演算の話です. 演算結果はもうだいたい予想がつくかと思います.</p>
+<h2 id="行列とスカラー">行列とスカラー</h2>
+<pre class="py3"><code>&gt;&gt;&gt; a = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+&gt;&gt;&gt; a
+array([[1, 2, 3],
+       [4, 5, 6],
+       [7, 8, 9]])
+&gt;&gt;&gt; a + (2 - 3j)
+array([[  3.-3.j,   4.-3.j,   5.-3.j],
+       [  6.-3.j,   7.-3.j,   8.-3.j],
+       [  9.-3.j,  10.-3.j,  11.-3.j]])
+&gt;&gt;&gt; a * 0.2
+array([[ 0.2,  0.4,  0.6],
+       [ 0.8,  1. ,  1.2],
+       [ 1.4,  1.6,  1.8]])</code></pre>
+<h2 id="行列とベクトル">行列とベクトル</h2>
+<pre class="py3"><code>&gt;&gt;&gt; b = np.array([1, 2, 3])
+&gt;&gt;&gt; a + b
+array([[ 2,  4,  6],
+       [ 5,  7,  9],
+       [ 8, 10, 12]])
+&gt;&gt;&gt; a * b
+array([[ 1,  4,  9],
+       [ 4, 10, 18],
+       [ 7, 16, 27]])
+&gt;&gt;&gt; a / b
+array([[ 1. ,  1. ,  1. ],
+       [ 4. ,  2.5,  2. ],
+       [ 7. ,  4. ,  3. ]])</code></pre>
+<h2 id="行列と行列">行列と行列</h2>
+<pre class="py3"><code>&gt;&gt;&gt; b = np.array([[-1, 2, -3], [4, -5, 6], [-7, 8, -9]])
+&gt;&gt;&gt; a + b
+array([[ 0,  4,  0],
+       [ 8,  0, 12],
+       [ 0, 16,  0]])
+&gt;&gt;&gt; a * b
+array([[ -1,   4,  -9],
+       [ 16, -25,  36],
+       [-49,  64, -81]])</code></pre>
+<h2 id="行列の初期化">行列の初期化</h2>
+<p>行列用にも便利な関数が用意されています. 以下はほんの一部です:</p>
+<pre class="py3"><code>&gt;&gt;&gt; np.identity(4)
+array([[ 1.,  0.,  0.,  0.],
+       [ 0.,  1.,  0.,  0.],
+       [ 0.,  0.,  1.,  0.],
+       [ 0.,  0.,  0.,  1.]])
+
+&gt;&gt;&gt; np.eye(4, 3)
+array([[ 1.,  0.,  0.],
+       [ 0.,  1.,  0.],
+       [ 0.,  0.,  1.],
+       [ 0.,  0.,  0.]])
+
+&gt;&gt;&gt; c = np.array([1, 2, 3, 4])
+&gt;&gt;&gt; np.diag(c)
+array([[1, 0, 0, 0],
+       [0, 2, 0, 0],
+       [0, 0, 3, 0],
+       [0, 0, 0, 4]])</code></pre>
+<h1 id="おわりに">おわりに</h1>
+<p>NumPyの便利な関数や細かい演算の規則などは他の方々がもっと良い記事を書いてくれていると思います. この記事見て, NumPyらしい書き方をすればforループを使わずに様々な計算ができそうであることを感じ取っていただければ幸いです. これらを活用すれば, 理系の大学生がプログラミングの授業で学ぶような数値計算アルゴリズムはC/C++に負けない速度で動いてくれます. もっとも, その手のアルゴリズムは既にSciPyなどに用意されているものも多いです.</p>
+<p>少し長くなってしまったので, 具体的な数値計算への応用については別の記事にまとめたいと思います. ありがとうございました.</p>
+<div class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>LAPACK(Linear Algebra PACKage)はFortran90で書かれた線形代数演算のライブラリです. C/C++用のラッパーでは<code>Lapacke</code>と呼ばれるものがあります. MKL互換のインターフェイスを持っているので, MKLのマニュアルが参考になります.<a href="#fnref1">↩</a></p></li>
+<li id="fn2"><p>詳しくは<a href="https://docs.scipy.org/doc/numpy/index.html">NumPy</a>や<a href="https://docs.scipy.org/doc/scipy-0.18.1/reference/">Scipy</a>のマニュアルをどうぞ.<a href="#fnref2">↩</a></p></li>
+<li id="fn3"><p>それ以外にも, 関数呼び出しのオーバーヘッドも大きい印象です. プロコンだと「動的計画法で書くと通るのに, メモ化再帰ではTLE」といったことがよく起こります.<a href="#fnref3">↩</a></p></li>
+<li id="fn4"><p>LAPACKよりも基本的な線形演算セットを含んだライブラリ. LAPACKの内部ではBLASを呼んでいます.<a href="#fnref4">↩</a></p></li>
+<li id="fn5"><p>「型がない」ということを嫌う人もいます. 「ある仕様」を満たすような設計をするプログラムと異なり, 物理における数値計算は出力が正しいかどうかを確認することがそう簡単ではありません. そしてプログラムの実行中に「変数の型が非明示的に変わる」ことが許されるとさらにデバッグは難しくなります. 可観測量はfloatに決まってるので, 静的型付けのほうがバグは生まれにくいという主張は十分に理解できます. でも自分はPythonが好きです.<a href="#fnref5">↩</a></p></li>
+</ol>
+</div>
