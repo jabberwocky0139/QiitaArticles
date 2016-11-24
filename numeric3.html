@@ -6,6 +6,7 @@
   <meta name="generator" content="pandoc" />
   <title></title>
   <style type="text/css">code{white-space: pre;}</style>
+  <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
 </head>
 <body>
 <!---
@@ -17,5 +18,72 @@
 <h1 id="あらまし">あらまし</h1>
 <p><a href="http://qiita.com/jabberwocky0139/items/c3620fb2f011f20a633b">NumPyを用いた数値計算の高速化 : 基礎</a></p>
 <p><a href="http://qiita.com/jabberwocky0139/items/a9751d11caa64bc19226">NumPy・SciPyを用いた数値計算の高速化 : 応用その1</a></p>
+<p>の続きになります. 基礎的な数値計算の手法を追っていきますが, 今回は少し発展的な内容も含みます.</p>
+<h1 id="超越方程式">超越方程式</h1>
+<p>随分大仰な名前ですが, 代数的な手法で解けない方程式のことを指します. 具体的には</p>
+<p><span class="math display">\[
+\sin(x) = \frac{x}{2}
+\]</span> こんな子です. この方程式は, 「<span class="math inline">\(\sin(x)\)</span>を知るためには<span class="math inline">\(\frac{x}{2}\)</span>が必要で, <span class="math inline">\(\frac{x}{2}\)</span>を知るには<span class="math inline">\(\sin(x)\)</span>が必要」という構造を持っているため, 「自己無撞着(self-consistent)方程式」とも呼ばれます. 代数的に解けなくても数値的に解くことはもちろん可能です. アルゴリズムは「Newton法」や「二分法」が挙げられます. アルゴリズムの詳細は省略しますが, そんなに難しくないので知らない方は調べてみてください. これらの実装は単純ですが, 結局は逐次代入をしているようなものなのでforループの使用が避けられません. Newton法だと基本的に収束は速いのですが, 微分可能な関数であることが条件で, 性質の良い関数が要求されます. 一方で2分法は指定した区間に解があれば必ず見つけることができますが, 収束までの反復回数は多くなります.</p>
+<p>ただ, もうお気づきかもしれませんが, これらは<code>scipy.optimize</code>というモジュールに既に実装してあります. forループ云々は関数の中で完結しており, 高速に動作してくれます.</p>
+<h2 id="実装">実装</h2>
+<p>上の方程式の解がだいたいどこにあるのかを確認します:</p>
+<div class="figure">
+<img src="images/figure5.png" />
+
+</div>
+<p>だいたい<span class="math inline">\(x = 1.5 - 2.0\)</span>の間にあることがわかりますね. これを二分法で解いてあげます:</p>
+<pre class="py3"><code>from scipy.optimize import bisect
+def f(x):
+    return np.sin(x) - x/2
+    
+bisect(f, 1.5, 2) 
+&gt;&gt;&gt; 1.895494267034337</code></pre>
+<p>非常にシンプルです. 区間内に解が2つ以上あるとどちらに収束するかわからないので, 必ず1つになるようにしましょう. もちろん代数的に解ける方程式でも使えます.</p>
+<h1 id="fourier変換">Fourier変換</h1>
+<p>Fourier変換と言えば信号処理などでおなじみですが, 今回も物理の話で進めさせて頂きます. 少し数学的な話が多くなりますがご了承ください. 前の記事で扱った拡散方程式を思い出してください:</p>
+<p><span class="math display">\[
+\frac{\partial}{\partial t}f(x, t) = \frac{\partial^2}{\partial x^2}f(x, t)
+\]</span> この子はFourier変換で解いてあげることができるのでした. その方法を見ていきましょう. Fourier変換と逆Fourier変換を以下のように定義します:</p>
+<p><span class="math display">\[
+\tilde{f}(k, t) = \frac{1}{\sqrt{2\pi}}\int dx e^{-ikx}f(k, t) = {\cal F}[f(x, t)]\\
+f(x, t) = \frac{1}{\sqrt{2\pi}}\int dk e^{ikx}\tilde{f}(k, t) = {\cal F}^{-1}[\tilde{f}(k, t)]
+\]</span> この定義を拡散方程式に代入してみましょう. すると, <span class="math inline">\(x\)</span>微分が実行できてしまいます:</p>
+<p><span class="math display">\[
+\frac{\partial}{\partial t}\left(\frac{1}{\sqrt{2\pi}}\int dk e^{ikx}\tilde{f}(k, t)\right) = \frac{\partial^2}{\partial x^2}\left(\frac{1}{\sqrt{2\pi}}\int dk e^{ikx}\tilde{f}(k, t)\right)\\
+\frac{\partial}{\partial t}\left(\frac{1}{\sqrt{2\pi}}\int dk e^{ikx}\tilde{f}(k, t)\right) = -\left(\frac{1}{\sqrt{2\pi}}\int dk k^2e^{ikx}\tilde{f}(k, t)\right)\\
+\]</span> さらに<span class="math inline">\(k\)</span>積分を外すと単なる<span class="math inline">\(t\)</span>に関する1階微分方程式になっているので, 簡単に解いてあげることができます:</p>
+<p><span class="math display">\[
+\frac{\partial}{\partial t}\tilde{f}(k, t) = -k^2\tilde{f}(k, t)\\
+\tilde{f}(k, t) = e^{-k^2 t}\tilde{f}(k, 0)
+\]</span> そしてこれを逆Fourier変換してあげます:</p>
+<p><span class="math display">\[
+\frac{1}{\sqrt{2\pi}}\int dk e^{ikx}\tilde{f}(k, t) = \frac{1}{\sqrt{2\pi}}\int dk e^{ikx}e^{-k^2 t}\tilde{f}(k, 0)\\
+f(x, t) = \frac{1}{\sqrt{2\pi}}\int dk e^{ikx}e^{-k^2 t}\tilde{f}(k, 0)
+\]</span> <span class="math inline">\(\tilde{f}\)</span>のままだとよくわからないので, <span class="math inline">\(f\)</span>に直してあげます:</p>
+<p><span class="math display">\[
+f(x, t) = \frac{1}{2\pi}\int dk e^{ikx}e^{-k^2 t}\int dx&#39; e^{-ikx&#39;}f(x&#39;, 0)
+\]</span> もし初期条件<span class="math inline">\(f(x, 0)\)</span>の式がわかっており, かつそれが解析的に積分できるものであれば<a href="#fn1" class="footnoteRef" id="fnref1"><sup>1</sup></a>解析解が求まります. もし解析的に積分不可能であればやはり数値的に解くありません.</p>
+<p>さて, この流れをシンプルに書くと以下のようになります:</p>
+<p><span class="math display">\[
+f(x, t) = {\cal F}^{-1}[e^{-k^2 t}{\cal F}[f(x, 0)]]
+\]</span> <span class="math inline">\(f(x, 0)\)</span>をFourier変換した後, <span class="math inline">\(e^{-k^2 t}\)</span>を掛けて逆Fourier変換すればよいのです. これの素晴らしいところは, <strong><span class="math inline">\(x\)</span>や<span class="math inline">\(t\)</span>を差分化していないところです. </strong> 以前のような差分化を用いた方法だと, 微分を差分に置き換えることが基本なので, 差分の幅が小さいことが絶対条件でした. しかし, 今回ははじめに<span class="math inline">\(x\)</span>や<span class="math inline">\(f(x)\)</span>を差分化するものの, <strong><span class="math inline">\(\Delta x\)</span>のオーダーが計算結果に効いてくることはありません. </strong> <span class="math inline">\(t\)</span>はそもそも差分化していません. つまり, <span class="math inline">\(t\)</span>の時間をどんどん進めていっても誤差が蓄積しません. これはけっこう凄いことです.</p>
+<p>さて, 最後に問題になるのが, <span class="math inline">\(k\)</span>とはなにかということです. ある<span class="math inline">\(N\)</span>個に差分化された<span class="math inline">\(x_i\)</span>に対して<span class="math inline">\(k_i\)</span>がどんな値を取るのでしょうか？これは<span class="math inline">\(x_i\)</span>の離散Fourier変換について真面目に考えればわかりますが,</p>
+<p><span class="math display">\[
+k_i = 
+\begin{cases}
+k&#39;_i\hspace{0.5cm} (0 \le i &lt; N/2)\\
+k&#39;_{i - N}\hspace{0.5cm} (N/2 \le i &lt; N)
+\end{cases}=
+\begin{cases}
+2\pi\frac{i}{N}\\
+2\pi\frac{N-i}{N}
+\end{cases}
+\]</span> となっています. これは少しややこしいですね. <strong>しかし, <code>scipy.fftpack</code>はこの<span class="math inline">\(k_i\)</span>を生成する関数まで用意しています. </strong> なんとも周到ですね.</p>
+<div class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>正確には「<span class="math inline">\(f\)</span>が解析的に積分可能」のではなく「<span class="math inline">\(f\)</span>が解析的にFourier変換可能」が条件.<a href="#fnref1">↩</a></p></li>
+</ol>
+</div>
 </body>
 </html>
