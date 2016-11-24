@@ -71,18 +71,92 @@ f(x, t) = {\cal F}^{-1}[e^{-k^2 t}{\cal F}[f(x, 0)]]
 <p><span class="math display">\[
 k_i = 
 \begin{cases}
-k&#39;_i\hspace{0.5cm} (0 \le i &lt; N/2)\\
-k&#39;_{i - N}\hspace{0.5cm} (N/2 \le i &lt; N)
-\end{cases}=
-\begin{cases}
-2\pi\frac{i}{N}\\
-2\pi\frac{N-i}{N}
+2\pi\frac{i}{N}\hspace{0.5cm} (0 \le i &lt; N/2)\\
+2\pi\frac{N-i}{N}\hspace{0.5cm} (N/2 \le i &lt; N)
 \end{cases}
-\]</span> となっています. これは少しややこしいですね. <strong>しかし, <code>scipy.fftpack</code>はこの<span class="math inline">\(k_i\)</span>を生成する関数まで用意しています. </strong> なんとも周到ですね.</p>
+\]</span> となっています. これは少しややこしいですね. <strong>しかし, SciPyはこの<span class="math inline">\(k_i\)</span>を生成する関数まで用意しています. </strong> なんとも周到ですね.</p>
+<h2 id="実装-1">実装</h2>
+<p>長々とお話してしまいましたが, コーディングはシンプルです. Fourier変換は<code>scipy.fftpack</code>に用意されています.</p>
+<p>注意点は2点あります.</p>
+<ul>
+<li><p>離散Fourier変換の仕様上, 分割数は2の累乗が好ましいです.</p></li>
+<li><p><code>fft</code>を噛ませて<span class="math inline">\(k\)</span>空間に移ると<code>complex</code>型を経由するので, <code>ifft</code>をかけて<span class="math inline">\(x\)</span>空間に戻しても虚部のゴミが残ってしまいます. <code>real</code>だけを取るか<code>abs</code>を取るようにしましょう.</p></li>
+</ul>
+<pre class="py3"><code>from scipy.fftpack import fft, ifft, fftfreq
+
+def f(x):
+    return np.exp(-x**2)
+
+# set system
+N, L = 256, 40.0
+x = np.linspace(-L/2, L/2, N)
+
+# set initial function
+gaussian = f(x)
+plt.plot(x, gaussian, label=&quot;t=0&quot;)
+
+# set k_i
+k = 2 * np.pi * fftfreq(N, d=1/N)/L
+time = [2, 4, 8]
+
+for t in time:
+    expK = np.exp(-k**2 * t)
+    result = ifft(fft(gaussian) * expK)</code></pre>
+<p>for文がありますがそこはご愛嬌...こういう時間ステップはしょうがないです. 今回は3回しか回してないですし. ただ, 注意したいのは<strong>2s→4s→8sのように逐次時間を進めているのではなく, それぞれ独立に時間発展を計算しているということです. </strong>つまり, 8sのグラフが欲しければ, <code>t=8</code>を代入するだけで良いのです. ここが差分法との最大の違いです.</p>
+<div class="figure">
+<img src="images/figure6.png" />
+
+</div>
+<p>前回と同じグラフが得られましたね. この方法は非常に強力でポテンシャルがある場合などにも応用でき, トロッター分解を用いたSymplectic法などに発展していきます...が, 専門的過ぎるのでここまでにしておきましょう.</p>
+<h1 id="非線形微分方程式発展">非線形微分方程式(発展)</h1>
+<p>この内容はちょっと専門的です. 興味がなければスルーして頂いて結構ですが, 少し大事な話も含みます.</p>
+<p>物理ではしばしば非線形微分方程式が出てきます. そんなある非線形方程式<a href="#fn2" class="footnoteRef" id="fnref2"><sup>2</sup></a></p>
+<p><span class="math display">\[
+\left(-\frac{1}{2}\frac{d^2}{dx^2} + g|\psi(x)|\right)\psi(x) = 0
+\]</span> があったとします. これは今までの方法で解くことは難しそうです. なぜなら<strong>差分化したときに行列の中に<span class="math inline">\(\psi(x)\)</span>を含むから</strong>です. 具体的には</p>
+<p><span class="math display">\[
+\left[
+\frac{1}{2\Delta x^2}
+    \begin{pmatrix}
+    -2&amp;1&amp;0&amp;\cdots&amp;0\\ 
+    1&amp;-2 &amp;1&amp;&amp;0\\
+    0 &amp; 1&amp;-2&amp;&amp; \vdots\\
+    \vdots&amp;&amp;&amp;\ddots&amp;1\\
+    0&amp; \cdots&amp; 0 &amp;1&amp; -2
+\end{pmatrix}
++g
+\begin{pmatrix}
+    |\psi_0|^2&amp;0&amp;0&amp;\cdots&amp;0\\ 
+    0&amp;|\psi_1|^2 &amp;0&amp;&amp;0\\
+    0 &amp; 0&amp;|\psi_2|^2&amp;&amp; \vdots\\
+    \vdots&amp;&amp;&amp;\ddots&amp;0\\
+    0&amp; \cdots&amp; 0 &amp;0&amp; |\psi_n|^2
+\end{pmatrix}
+\right]
+\begin{pmatrix}
+\psi_0\\
+\psi_1\\
+\vdots\\
+\psi_{n-1}\\
+\psi_n
+\end{pmatrix}
+= T(\psi)\psi
+=0
+\]</span> これは<span class="math inline">\(T\psi\)</span>のような線形作用素で書くことができないということであり, これが「非線形」ということばのひとつの解釈です. 上では無理やり行列で書いていますが, <span class="math inline">\(T(\psi)\psi\)</span>になってしまいます. <span class="math inline">\(\psi\)</span>を求めたいのに, それを求めるために必要な行列が<span class="math inline">\(\psi\)</span>を含んでいるという構造ですね. これを自己無撞着的と呼ぶのでした.</p>
+<p>さて, ここでちょっと以下のような固有値方程式を考えてみます:</p>
+<p><span class="math display">\[
+T(\psi)\psi = E_n \psi
+\]</span> この固有値方程式の<span class="math inline">\(E_i = 0\)</span>に相当するのが元の微分方程式です. これを用いたアイデアが以下のとおりです:</p>
+<ul>
+<li><p><strong>この非線形微分方程式を満たす特解の形がある程度わかっていたとき, その解に近い<span class="math inline">\(\psi\)</span>を使って<span class="math inline">\(T(\psi)\)</span>をつくり, 固有値方程式を解く.</strong></p></li>
+<li><p><strong>得られた固有値の中で, 絶対値が最も小さいもの(<span class="math inline">\(E_i = 0\)</span>に近いもの)に対応する固有ベクトルは非線形微分方程式の解に近いものだと考えられる.</strong></p></li>
+<li><p><strong>その固有ベクトルで再び<span class="math inline">\(T(\psi)\)</span>をつくり固有値方程式を解く...ということを繰り返した結果, <span class="math inline">\(\psi\)</span>の形が変わらなくなったときにこれは元の微分方程式の解になっている.</strong></p></li>
+</ul>
 <div class="footnotes">
 <hr />
 <ol>
 <li id="fn1"><p>正確には「<span class="math inline">\(f\)</span>が解析的に積分可能」のではなく「<span class="math inline">\(f\)</span>が解析的にFourier変換可能」が条件.<a href="#fnref1">↩</a></p></li>
+<li id="fn2"><p>Gross-Pitaevskii方程式と呼ばれています.<a href="#fnref2">↩</a></p></li>
 </ol>
 </div>
 </body>
