@@ -112,7 +112,7 @@ for t in time:
 <p>この内容はちょっと専門的です. 興味がなければスルーして頂いて結構ですが, 少し大事な話も含みます.</p>
 <p>物理ではしばしば非線形微分方程式が出てきます. そんなある非線形方程式<a href="#fn2" class="footnoteRef" id="fnref2"><sup>2</sup></a></p>
 <p><span class="math display">\[
-\left(-\frac{1}{2}\frac{d^2}{dx^2} + g|\psi(x)|\right)\psi(x) = 0
+\left(-\frac{1}{2}\frac{d^2}{dx^2} + g|\psi(x)|\right)\psi(x) = \mu\psi(x)
 \]</span> があったとします. これは今までの方法で解くことは難しそうです. なぜなら<strong>差分化したときに行列の中に<span class="math inline">\(\psi(x)\)</span>を含むから</strong>です. 具体的には</p>
 <p><span class="math display">\[
 \left[
@@ -141,22 +141,87 @@ for t in time:
 \psi_n
 \end{pmatrix}
 = T(\psi)\psi
-=0
+=\mu\psi
 \]</span> これは<span class="math inline">\(T\psi\)</span>のような線形作用素で書くことができないということであり, これが「非線形」ということばのひとつの解釈です. 上では無理やり行列で書いていますが, <span class="math inline">\(T(\psi)\psi\)</span>になってしまいます. <span class="math inline">\(\psi\)</span>を求めたいのに, それを求めるために必要な行列が<span class="math inline">\(\psi\)</span>を含んでいるという構造ですね. これを自己無撞着的と呼ぶのでした.</p>
-<p>さて, ここでちょっと以下のような固有値方程式を考えてみます:</p>
+<p>さて, ここで上の微分方程式を<span class="math inline">\(\mu\)</span>を固有値とした固有値方程式と見立ててあげます:</p>
 <p><span class="math display">\[
-T(\psi)\psi = E_n \psi
-\]</span> この固有値方程式の<span class="math inline">\(E_i = 0\)</span>に相当するのが元の微分方程式です. これを用いたアイデアが以下のとおりです:</p>
+T(\psi)\psi = \mu_n \psi
+\]</span> 自己無撞着方程式であることから以下のようなアイデアが浮かびます:</p>
 <ul>
 <li><p><strong>この非線形微分方程式を満たす特解の形がある程度わかっていたとき, その解に近い<span class="math inline">\(\psi\)</span>を使って<span class="math inline">\(T(\psi)\)</span>をつくり, 固有値方程式を解く.</strong></p></li>
-<li><p><strong>得られた固有値の中で, 絶対値が最も小さいもの(<span class="math inline">\(E_i = 0\)</span>に近いもの)に対応する固有ベクトルは非線形微分方程式の解に近いものだと考えられる.</strong></p></li>
-<li><p><strong>その固有ベクトルで再び<span class="math inline">\(T(\psi)\)</span>をつくり固有値方程式を解く...ということを繰り返した結果, <span class="math inline">\(\psi\)</span>の形が変わらなくなったときにこれは元の微分方程式の解になっている.</strong></p></li>
+<li><p><strong>得られた固有ベクトルの中で, 今求めようとしているものに一番近いものを選ぶ.</strong></p></li>
+<li><p><strong>その固有ベクトルで再び<span class="math inline">\(T(\psi)\)</span>をつくり固有値方程式を解く...ということを繰り返した結果, <span class="math inline">\(\psi\)</span>の形が変わらなくなったときにこれは元の微分方程式の解になっており, そのときの<span class="math inline">\(\mu\)</span>の値も同時に決定される.</strong></p></li>
 </ul>
+<p>そして, 上の非線形方程式にはソリトン解と呼ばれるものが存在し, その中でも<span class="math inline">\(g &lt; 0\)</span>のときにはブライトソリトンと呼ばれるガウシアンに似た<a href="#fn3" class="footnoteRef" id="fnref3"><sup>3</sup></a>特解が存在します. というわけで, <span class="math inline">\(\psi\)</span>の初期関数にガウシアンを選んでこのアイデアを実装してみましょう.</p>
+<h2 id="実装-2">実装</h2>
+<pre class="py3"><code>def h(x):
+    return x * np.exp(-x**2)
+
+# set system
+L, N, g = 30, 200, -5
+x, dx = np.linspace(-L/2, L/2, N), L / N
+
+# set K matrix
+K = np.eye(N, N)
+K_sub = np.vstack((K[1:], np.array([0] * N)))
+K = (dx**-2 * (2 * K - K_sub - K_sub.T)) * 0.5
+
+# set initial parameter
+v, w, mu = np.array([h(x)]).reshape(N, 1), np.array([3]), 0
+
+# self-consistent loop
+while abs(w[np.argmin(w)] - mu) &gt; 1e-5:
+
+    # update mu
+    mu = w[np.argmin(w)]
+    
+    # set G matrix
+    G = g * np.diag(np.abs(v.T[np.argmin(w)])**2)
+    
+    # solve
+    T = K + G
+    w, v = np.linalg.eigh(T)</code></pre>
+<p>今回は繰り返す関数に<span class="math inline">\(v.T[0]\)</span>を選びました. 今回の微分方程式では一番低いエネルギー固有関数に1ソリトンが対応しているようです<a href="#fn4" class="footnoteRef" id="fnref4"><sup>4</sup></a>. 収束条件は<span class="math inline">\(\mu\)</span>に課しています. このぐらいの制度で, 16回ほどループしていました. これをプロットしてみましょう:</p>
+<div class="figure">
+<img src="images/figure7.png" />
+
+</div>
+<p>ソリトンっぽいですが, ガウシアンでないかが不安です. 試しにソリトンの一般解</p>
+<p><span class="math display">\[
+f_s(x) = \frac{b}{a\cosh(x)}
+\]</span> でフィッティングしてみましょう:</p>
+<pre class="py3"><code>from scipy.optimize import curve_fit
+
+def bright_soliton(x, a, b):
+    return (b / np.cosh(a * x))**2
+    
+param = curve_fit(bright_soliton, x, v.T[0]**2)[0]</code></pre>
+<div class="figure">
+<img src="images/figure8.png" alt="ぴったり一致しました. 恐らくソリトンで間違いないでしょう." />
+<p class="caption">ぴったり一致しました. 恐らくソリトンで間違いないでしょう.</p>
+</div>
+<p>ちょっと小難しい話が続きましたが, 今回重要なのはソリトン云々ではなく, 自己無撞着方程式のような<strong>値を変えつつ行列を初期化して計算を繰り返すようなコードにおいては, いちいち初期化にループを用いていると大変な時間がかかるだろうということです.</strong> 自己無撞着ループ + 行列の初期化2ループ = 3ループみたいなことをやっているともうたいへんです. こういうアルゴリズムをPythonで相手にするにはNumPyが不可欠なのです. 以前の<a href="http://qiita.com/jabberwocky0139/items/c3620fb2f011f20a633b">基礎編</a>で書いた「巨大な行列をパラメータを変えるごとに都度初期化して計算を進めるようなタスクでは, 大きな威力を発揮します」とは今回のような計算を指すのでした.</p>
+<h1 id="さいごに-個人的なこと">さいごに / 個人的なこと</h1>
+<p>基礎的な数値計算の実装についてお話ししてきました. これ以上はやや専門的になるかと思うのでここまでとします. あとは自分がやりたい計算に合わせてNumPy・SciPyのリファレンスを見ていただけると良いかと思います. とは言いつつも, 少し語り残したこともあるのでまた別記事にまとめるかもしれません.</p>
+<p>そもそもこの記事を書こうと思った動機は, この手の高速化に関する情報があまりネット上に無いなあと感じていたからです. 自分は以下のような道を辿ってきました.</p>
+<ol style="list-style-type: decimal">
+<li><p>Pythonのシンプルな仕様と数値計算のライブラリの豊富さに感動. 自分の研究にも使いたいが, C++のコードをそのまま落とし込むと非常に遅い. ハードな数値計算に対応できないのだろうか？と模索を始める.</p></li>
+<li><p>「NumPyが高速だ！」という話は至るところでされていますが, Cから移行してきた人は結局for/while文を使ってしまいます. NumPy配列をfor文に渡すという愚行を犯し, 「ぜんぜん早くないじゃないか！」と思っていました. 今考えると滑稽ですね.</p></li>
+<li><p>「for文が遅い！」という話もまた各方面でされていますが, Cから移行してきた人はfor/while文を使わずにどうやって数値計算のコードを書けばよいのかがわからないです. 確かに行列演算は高速なのでしょうが, 行列以外の計算はどうなのか, その行列をどうやって用意するか等々悩みが尽きませんでした.</p></li>
+<li><p>「リスト内包は普通のfor文より速い！」とも言われますが, 正直微々たる差でした.</p></li>
+<li><p>そして行き着く先がCython, Boost/Python, Numbaなどでした. これらのツールは確かに高速にはなるものの制約が多く, 高速化に目を向けるほどCライクなコードに豹変していきます.</p></li>
+<li><p>結果「C++でよくない？」となるわけです. しかしPythonに慣れた身ではC++の難解な言語仕様に嫌気が差してしまいます.</p></li>
+<li><p>5.に戻る</p></li>
+</ol>
+<p>...ということを1年近く繰り返していました. NumPyのマニュアルを読めばそれぞれの関数の使い方はわかりますが, ハードな数値計算にも耐えうる, つまりfor文を極力使わない数値アルゴリズムの解説はあまり見当たらなかったように思います.</p>
+<p>今の自分が「はじめからこれがわかっていれば...」と思うことをまとめたつもりです. 数値計算の実行速度に悩む方々の助けになれば幸いです.</p>
 <div class="footnotes">
 <hr />
 <ol>
 <li id="fn1"><p>正確には「<span class="math inline">\(f\)</span>が解析的に積分可能」のではなく「<span class="math inline">\(f\)</span>が解析的にFourier変換可能」が条件.<a href="#fnref1">↩</a></p></li>
 <li id="fn2"><p>Gross-Pitaevskii方程式と呼ばれています.<a href="#fnref2">↩</a></p></li>
+<li id="fn3"><p>似てはいるものの, ガウシアンとは全く異なる性質を持ちます.<a href="#fnref3">↩</a></p></li>
+<li id="fn4"><p>解くモデルごとに変わる可能性は十分あり, 試行錯誤が必要かもしれません.<a href="#fnref4">↩</a></p></li>
 </ol>
 </div>
 </body>
