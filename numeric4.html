@@ -1,0 +1,74 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title></title>
+  <style type="text/css">code{white-space: pre;}</style>
+</head>
+<body>
+<!---
+    NumPy・SciPyを用いた数値計算の高速化 : 落ち穂拾い
+-->
+<h1 id="対象">対象</h1>
+<p>Python及びNumPy初心者に向けて書いています. 「C言語は使えるけど最近Pythonを始めた」とか「Pythonらしい書き方がよくわからない」に該当する物理系の数値計算を目的とした方には特に有用かもしれません.</p>
+<p>また, 自分の不勉強のために間違った記述があるかもしれません. ご容赦ください.</p>
+<h1 id="あらまし">あらまし</h1>
+<p><a href="http://qiita.com/jabberwocky0139/items/c3620fb2f011f20a633b">NumPyを用いた数値計算の高速化 : 基礎</a></p>
+<p><a href="http://qiita.com/jabberwocky0139/items/a9751d11caa64bc19226">NumPy・SciPyを用いた数値計算の高速化 : 応用その1</a></p>
+<p><a href="http://qiita.com/jabberwocky0139/items/26451d7942777d0001f1">NumPy・SciPyを用いた数値計算の高速化 : 応用その2</a></p>
+<p>のおまけになります. 細々とした話が中心になります.</p>
+<h1 id="numpy関数とmath関数">numpy関数とmath関数</h1>
+<ol style="list-style-type: decimal">
+<li><p><code>numpy</code>のユニバーサル関数は<code>ndarray</code>を引数にとって<code>ndarray</code>を返します. <code>math</code>関数は<code>int</code>か<code>float</code>しか取ることができません.</p></li>
+<li><p><code>math</code>関数は<code>complex</code>も取れません. <code>complex</code>を渡したい場合は<code>cmath</code>を使います. <code>numpy</code>は<code>complex</code>も取ることができます.</p></li>
+<li><p><code>numpy</code>の関数は定義域から外れた, もしくは際どい値を与えるとRuntimeWarningを返すものの, Exceptionを返すことはありません. <code>math</code>関数は例外を返してきます:</p></li>
+</ol>
+<pre class="py3"><code>import numpy as np
+import math as m
+
+m.log(0) # ValueError: math domain error
+mp.log(0) # RuntimeWarning: divide by zero encountered in log
+&gt;&gt;&gt; -inf
+
+mp.log(-1) # RuntimeWarning: invalid value encountered in log
+&gt;&gt;&gt; nan</code></pre>
+<p><code>np.log(0)</code>が<code>-inf</code>を返してくれるのは嬉しいですね.</p>
+<ol start="4" style="list-style-type: decimal">
+<li>このように<code>numpy</code>のユニバーサル関数は万能ですが, 実行速度では<code>math</code>の方が上のようです. <code>ndarray</code>を渡す用途でなければ<code>math</code>関数を使うと良いでしょう.</li>
+</ol>
+<h1 id="リストによるndarrayへのアクセス">リストによる<code>ndarray</code>へのアクセス</h1>
+<p>以前にさらっと触れたのですが, <code>ndarray</code>へのアクセスをリストで行うことができます:</p>
+<pre class="py3"><code>a = [1, 3, 5]
+b = np.array([7, 5, 4, 6, 2, 3, 1, 9, 8])
+b[a]
+&gt;&gt;&gt; array([5, 6, 3])</code></pre>
+<p>知っていると便利な場面もあるでしょう.</p>
+<h1 id="よりよいblasへ">よりよいBLASへ</h1>
+<p><code>numpy</code>の基本的な行列演算はBLAS(Basic Linear Algebra Subprograms)に依存しているので, 利用するBLASによって速度が大きく変わります. 例えばUbuntuのシステムに標準で入っている「reference BLAS」は結構遅い実装になっており, <code>numpy</code>自体を高速にするにはそれ相応のBLASを使ってあげなければいけません.</p>
+<p>その第一候補として「Open BLAS<a href="#fn1" class="footnoteRef" id="fnref1"><sup>1</sup></a>」が挙げられます. その導入方法や効果は<a href="http://verifiedby.me/adiary/058">こちら</a>が詳しいです. 自分も以前はこれにお世話になっていました.</p>
+<p>しかしながら実は, Anaconda<a href="#fn2" class="footnoteRef" id="fnref2"><sup>2</sup></a>にはMLK(Math Kernel Library)<a href="#fn3" class="footnoteRef" id="fnref3"><sup>3</sup></a>が標準搭載されており, この上でnumpyを利用する限りは非常に高速です. NumPy・SciPyを使う方はAnacondaを使わない理由はもう無さそうですね.</p>
+<p>ただAnacondaをインストールするとシステムの<code>python</code>がAnacondaの対応したPythonのバージョンに上書きされてしまい, システム周りの不具合が生じる場合があります. なのでpyenvなどを通じてインストールするのが良いです. AnacondaによるPython環境構築については<a href="http://qiita.com/y__sama/items/5b62d31cb7e6ed50f02c">こちら</a>が詳しいです.</p>
+<h1 id="python高速化のサブセットについての感想">Python高速化のサブセットについての感想</h1>
+<p>Pythonを高速化する枠組みはいくつも存在し, かつそのうちのいくつかを自分は使ってみました.</p>
+<h2 id="cython">Cython</h2>
+<p>PythonのC拡張をより使いやすくするための新しい言語と言えばよいでしょうか. 基本文法はPythonなのですが, 実行の際にコードはCにコンパイルされます. ちゃんと高速化するには変数の型を教えてあげたりリストのサイズを教えてあげたりする必要があります. ちゃんと書けば実行速度はホントにCです.</p>
+<p>コードのボトルネックが明らかなとき, その部分を関数化してCythonで書き直すような運用がよいのでしょうか. しかし, 変数に型があったりリストのサイズを固定したりと, 最早Pythonではないです. 書いている最中に「コレ書くんなら最初からCで書けば...」と思ったことも何度かあります. Pythonicなコードにはならないと思います.</p>
+<h2 id="boostpython">Boost/Python</h2>
+<p>PythonからC++のクラスや関数がそのままimportできるBoostのライブラリです. Cythonは高速化したい部分も含めてPythonで記述できるが, ビルドがめんどくさいです. Boost/Pythonは高速化したい部分だけC/C++にお任せすることができます.</p>
+<p>しかしやはり多言語とのジョイントは型の問題が辛いですね. C++側に<code>ndarray</code>を渡せないようです. <code>ndarray</code>を渡せるBoost/NumPyやPyUblasという枠組みもあるのですが, Python3でのビルドが叶わず.</p>
+<h2 id="numba">Numba</h2>
+<p>JITコンパイラを使って高速化するモジュール. デコレータ一発で動き, 上２つのようにモジュールが2つ以上にまたがることもない. すごく未来を感じる一方, ノウハウが熟しきっていない気がします. うまく速くなることもあれば失敗することもあり...</p>
+<h2 id="結論">結論</h2>
+<p>科学計算ならNumPy・SciPyで十分であることがわかりました.</p>
+<div class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>これはとある後藤さんという方がつくった「Goto BLAS」のフォークです. 当の後藤さんは今はMKLの開発をしているそうで, Goto BLASの開発は止まってしまっているようです.<a href="#fnref1">↩</a></p></li>
+<li id="fn2"><p>科学技術系モジュールをいい感じに詰め込んだパッケージです.<a href="#fnref2">↩</a></p></li>
+<li id="fn3"><p>Intelが開発する様々な数学ルーチンに関するライブラリ. BLAS, LAPACKなどの非常に高速な実装を含んでいます.<a href="#fnref3">↩</a></p></li>
+</ol>
+</div>
+</body>
+</html>
