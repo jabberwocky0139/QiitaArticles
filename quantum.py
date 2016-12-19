@@ -4,13 +4,6 @@ import matplotlib.pyplot as plt
 import seaborn
 
 
-L, N = 1, 200
-# x, dx = np.linspace(-L/2, 3*L/2, N), L / N
-x, dx = np.linspace(0, L, N), L / N
-K = np.eye(N, N)
-K_sub = np.vstack((K[1:], np.array([0] * N)))
-K = dx**-2 * (2 * K - K_sub - K_sub.T)
-
 # def pot(arr_x):
 #     ans = []
 #     for i in arr_x:
@@ -20,35 +13,96 @@ K = dx**-2 * (2 * K - K_sub - K_sub.T)
 #             ans.append(1e9)
 #     return ans
 
-V = np.diag([0] * N)
-H = (K + V) / 2
-w, v = np.linalg.eigh(H)
+def finite1():
 
-plt.figure(figsize=(6, 4))
-# plt.plot(x, v.T[0] / simps(v.T[0]**2, x)**0.5, label="ground state")
-# plt.plot(x, v.T[1] / simps(v.T[1]**2, x)**0.5, label="1st excited state")
-# plt.plot(x, v.T[2] / simps(v.T[2]**2, x)**0.5, label="2nd excited state")
-# plt.plot(x, 2 * np.sin(np.pi * x /L) / np.sqrt(2 * L), '--', label="analytic(ground)")
-# plt.plot(x, -2 * np.sin(2 * np.pi * x /L) / np.sqrt(2 * L), '--', label="analytic(1st)")
-# plt.plot(x, -2 * np.sin(3 * np.pi * x /L) / np.sqrt(2 * L), '--', label="analytic(2nd)")
+    L, N = 2, 200
+    x, dx = np.linspace(0, L, N), L / N
+    
+    K = np.eye(N, N)
+    K_sub = np.vstack((K[1:], np.array([0] * N)))
+    K = dx**-2 * (2 * K - K_sub - K_sub.T)
 
-# plt.xlabel(r'$x$', fontsize=18)
-# plt.ylabel(r'$\psi$', fontsize=18)
-# plt.legend(loc="lower left")
+    
+    V = np.diag([0] * (N // 2) + [100] * (N // 2))
+    H = (K + V) / 2
+    w, v = np.linalg.eigh(H)
 
-# a = [0, 10]
-# b = [0, 0]
-# plt.plot([0, 0], a, '-k', linewidth=4)
-# plt.plot([1, 1], a, '-k', linewidth=4)
-# plt.plot([0, 1], b, '-k', linewidth=4)
-# plt.xlim(-L/2, 3*L/2)
-# plt.ylim(-1.7, 2)
+    plt.figure(figsize=(6, 4))
 
-n = np.arange(1, 11)
-plt.plot(w[:10], label='numerical')
-plt.plot(n**2 * np.pi**2 / (2 * L**2), '--', label='analytic')
-plt.xlabel(r'$n$', fontsize=18)
-plt.ylabel(r'$E_n$', fontsize=18)
-plt.legend(loc="best")
+    ## 固有関数
+    plt.plot(x, np.abs(v.T[0] / simps(v.T[0]**2, x)**0.5), label="ground state")
+    plt.plot(x, v.T[1] / simps(v.T[1]**2, x)**0.5, label="1st excited state")
+    plt.plot(x, -v.T[2] / simps(v.T[2]**2, x)**0.5, label="2nd excited state")
+    # plt.plot(x, 2 * np.sin(np.pi * x /L) / np.sqrt(2 * L), '--', label="analytic(ground)")
+    # plt.plot(x, -2 * np.sin(2 * np.pi * x /L) / np.sqrt(2 * L), '--', label="analytic(1st)")
+    # plt.plot(x, -2 * np.sin(3 * np.pi * x /L) / np.sqrt(2 * L), '--', label="analytic(2nd)")
+
+    plt.xlabel(r'$x$', fontsize=18)
+    plt.ylabel(r'$\psi$', fontsize=18)
+    plt.legend(loc="lower left")
+
+    ## ポテンシャル
+    a = [0, 10]
+    b = [0, 0]
+    plt.plot([0.01, 0.01], [0, 10], '-k', linewidth=4)
+    plt.plot([1, 1], [0, 2], '-k', linewidth=4)
+    plt.plot([0, 1], [0, 0], '-k', linewidth=4)
+    plt.plot([1, 2], [2, 2], '-k', linewidth=4)
+    plt.xlim(0, L)
+    plt.ylim(-1.7, 3)
+    plt.text(1.1, 2.1, r'$V = 100$', ha = 'center', va = 'bottom')
+    print(w[:3])
+
+def finite2():
+
+    L, N = 2, 400
+    x, dx = np.linspace(-L/2, L/2, N), L / N
+    
+    K = np.eye(N, N)
+    K_sub = np.vstack((K[1:], np.array([0] * N)))
+    K = dx**-2 * (2 * K - K_sub - K_sub.T)
+
+    V = np.diag([150] * (N // 4) + [0] * (N // 2) + [150] * (N // 4))
+    H = K / 2 + V
+    w, v = np.linalg.eigh(H)
+
+    plt.figure(figsize=(6, 4))
+
+    ## 固有関数
+    plt.plot(x, np.abs(v.T[0] / simps(v.T[0]**2, x)**0.5), label="ground state")
+    plt.plot(x, v.T[1] / simps(v.T[1]**2, x)**0.5, label="1st excited state")
+    plt.plot(x, v.T[2] / simps(v.T[2]**2, x)**0.5, label="2nd excited state")
+    plt.plot(x, np.cos(2.815 * x) * 1.335, '--', label="analytical : cos(kx)")
+    plt.plot(x, 835.7 * np.exp(-17.09 * x) * 1.335, '--', label="analytical : exp(-kappa x)")
+    plt.plot(x, 835.7 * np.exp(17.09 * x) * 1.335, '--', label="analytical : exp(kappa x)")
+    # plt.plot(x, -2 * np.sin(2 * np.pi * x /L) / np.sqrt(2 * L), '--', label="analytic(1st)")
+    # plt.plot(x, -2 * np.sin(3 * np.pi * x /L) / np.sqrt(2 * L), '--', label="analytic(2nd)")
+
+    plt.xlabel(r'$x$', fontsize=18)
+    plt.ylabel(r'$\psi$', fontsize=18)
+    plt.legend(loc="lower left")
+
+    ## ポテンシャル
+    a = [0, 10]
+    b = [0, 0]
+    plt.plot([-1, -0.5], [2, 2], '-k', linewidth=4)
+    plt.plot([-0.5, -0.5], [2, 0], '-k', linewidth=4)
+    plt.plot([-0.5, 0.5], [0, 0], '-k', linewidth=4)
+    plt.plot([0.5, 0.5], [0, 2], '-k', linewidth=4)
+    plt.plot([0.5, 1], [2, 2], '-k', linewidth=4)
+    plt.xlim(-L/2, L/2)
+    plt.ylim(-1.5, 2.5)
+    plt.text(0.6, 2.1, r'$V = 150$', ha = 'center', va = 'bottom', fontsize=12)
+    print(w[0])
+
+
+finite2()
+## エネルギー固有値
+# n = np.arange(1, 11)
+# plt.plot(w[:10], label='numerical')
+# plt.plot(n**2 * np.pi**2 / (2 * L**2), '--', label='analytic')
+# plt.xlabel(r'$n$', fontsize=18)
+# plt.ylabel(r'$E_n$', fontsize=18)
+plt.legend(loc="upper center")
 plt.show()
 
