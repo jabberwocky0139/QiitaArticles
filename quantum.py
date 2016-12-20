@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.integrate import simps
+from scipy.integrate import simps, quad
 import matplotlib.pyplot as plt
 import seaborn
 
@@ -55,8 +55,8 @@ def finite1():
 
 def finite2():
 
-    L, N = 2, 400
-    x, dx = np.linspace(-L/2, L/2, N), L / N
+    L, N = 1, 400
+    x, dx = np.linspace(-L, L, N), 2 * L / N
     
     K = np.eye(N, N)
     K_sub = np.vstack((K[1:], np.array([0] * N)))
@@ -72,9 +72,16 @@ def finite2():
     plt.plot(x, np.abs(v.T[0] / simps(v.T[0]**2, x)**0.5), label="ground state")
     plt.plot(x, v.T[1] / simps(v.T[1]**2, x)**0.5, label="1st excited state")
     plt.plot(x, v.T[2] / simps(v.T[2]**2, x)**0.5, label="2nd excited state")
-    plt.plot(x, np.cos(2.815 * x) * 1.335, '--', label="analytical : cos(kx)")
-    plt.plot(x, 835.7 * np.exp(-17.09 * x) * 1.335, '--', label="analytical : exp(-kappa x)")
-    plt.plot(x, 835.7 * np.exp(17.09 * x) * 1.335, '--', label="analytical : exp(kappa x)")
+
+    # B = 1.335
+    A = 835.7
+    B = quad(lambda x: (A * np.exp(17.09 * x))**2, a = -np.inf, b=-L/2)[0] + quad(lambda x: (np.cos(2.815 * x))**2, a = -L/2, b = L/2)[0] + quad(lambda x:(A * np.exp(-17.09 * x))**2, a = L/2, b = np.inf)[0]
+    B = B**0.5
+    print(B)
+    
+    plt.plot(x, np.cos(2.815 * x) / B, '--', label="analytical : cos(kx)")
+    plt.plot(x, A * np.exp(-17.09 * x) / B, '--', label="analytical : exp(-kappa x)")
+    plt.plot(x, A * np.exp(17.09 * x) / B, '--', label="analytical : exp(kappa x)")
     # plt.plot(x, -2 * np.sin(2 * np.pi * x /L) / np.sqrt(2 * L), '--', label="analytic(1st)")
     # plt.plot(x, -2 * np.sin(3 * np.pi * x /L) / np.sqrt(2 * L), '--', label="analytic(2nd)")
 
@@ -90,10 +97,10 @@ def finite2():
     plt.plot([-0.5, 0.5], [0, 0], '-k', linewidth=4)
     plt.plot([0.5, 0.5], [0, 2], '-k', linewidth=4)
     plt.plot([0.5, 1], [2, 2], '-k', linewidth=4)
-    plt.xlim(-L/2, L/2)
+    plt.xlim(-L, L)
     plt.ylim(-1.5, 2.5)
     plt.text(0.6, 2.1, r'$V = 150$', ha = 'center', va = 'bottom', fontsize=12)
-    print(w[0])
+    print(w[:3])
 
 
 finite2()
