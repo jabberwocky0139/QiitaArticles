@@ -1,0 +1,78 @@
+<!---
+    Helm事始め(helm-intro 和訳)
+-->
+<h1 id="あらまし">あらまし</h1>
+<p>訳は「ノリ &gt;&gt; 正確性」です. 原文と異なる表現にしているところもたくさんあります.</p>
+<h1 id="a-package-in-a-league-of-its-own-helm">A Package in a league of its own: <code>helm</code></h1>
+<p><u>作者さんたち:</u></p>
+<ul>
+<li><p>Tamas Patrovic (-2007). 最初の開発者さん. このときは<code>Anything</code>という名前でした.</p></li>
+<li><p>るびきち (2008-2011). このときもまだ<code>Anything</code>.</p></li>
+<li><p>Thierry Volpiatto (2011-). 現在のメンテナさん. このときに<code>Anything</code>は<code>Helm</code>に生まれ変わりました.</p></li>
+</ul>
+<p><u>ホームページ:</u> <a href="https://github.com/emacs-helm/helm">GitHub</a></p>
+<p><u><code>Helm</code>の特徴</u></p>
+<p><font color="HotPink"> <code>Helm</code>はEmacsでインクリメンタルに補完や検索をするためのフレームワークです. </font>Emacsで何か(Bufferやファイルなど)を探しているときに, 役に立ってくれます.</p>
+<p>Helmは<code>anything.el</code>(Tamas Patrovicさん作)のフォークで, 言わば<code>anything.el</code>のご子息です. <code>anything.el</code>のレガシーコードをお掃除することに始まり, <font color="HotPink">いろんなツールを用意してくれています.</font> しかもそれらは下位互換に縛られるようなことはありません.</p>
+<p><u>インストール:</u></p>
+<p><a href="https://github.com/bbatsov/prelude">Emacs Prelude</a>か<a href="https://github.com/syl20bnr/spacemacs">Spacemacs</a>では最初からセットアップされており, このガイドにあるような設定は必要ないです. でも<a href="https://github.com/bbatsov/prelude">Emacs Prelude</a>ではHelmがデフォルトで無効になってます. <a href="https://github.com/bbatsov/prelude#helm">ここ</a>を見て有効にしてください. <a href="https://github.com/syl20bnr/spacemacs">Spacemacs</a>はデフォルトで有効です.</p>
+<p>もしSpacemacsユーザーなら, もうなんにもしなくていいです. ふつうのEmacsユーザーなら<code>M-x list-packages</code>で<strong>helm</strong>を選んでインストールしましょう. インストールが終わったら以下の設定を追加してhelmを有効にしましょう.</p>
+<p>最小設定:</p>
+<pre class="elisp"><code>(require &#39;helm-config)
+(helm-mode 1)</code></pre>
+<p>拡張設定:</p>
+<pre class="elisp"><code>(require &#39;helm)
+(require &#39;helm-config)
+
+;; The default &quot;C-x c&quot; is quite close to &quot;C-x C-c&quot;, which quits Emacs.
+;; Changed to &quot;C-c h&quot;. Note: We must set &quot;C-c h&quot; globally, because we
+;; cannot change `helm-command-prefix-key&#39; once `helm-config&#39; is loaded.
+(global-set-key (kbd &quot;C-c h&quot;) &#39;helm-command-prefix)
+(global-unset-key (kbd &quot;C-x c&quot;))
+
+(define-key helm-map (kbd &quot;&lt;tab&gt;&quot;) &#39;helm-execute-persistent-action) ; rebind tab to run persistent action
+(define-key helm-map (kbd &quot;C-i&quot;) &#39;helm-execute-persistent-action) ; make TAB work in terminal
+(define-key helm-map (kbd &quot;C-z&quot;)  &#39;helm-select-action) ; list actions using C-z
+
+(when (executable-find &quot;curl&quot;)
+  (setq helm-google-suggest-use-curl-p t))
+
+(setq helm-split-window-in-side-p           t ; open helm buffer inside current window, not occupy whole other window
+      helm-move-to-line-cycle-in-source     t ; move to end or beginning of source when reaching top or bottom of source.
+      helm-ff-search-library-in-sexp        t ; search for library in `require&#39; and `declare-function&#39; sexp.
+      helm-scroll-amount                    8 ; scroll 8 lines other window using M-&lt;next&gt;/M-&lt;prior&gt;
+      helm-ff-file-name-history-use-recentf t
+      helm-echo-input-in-header-line t)
+
+(defun spacemacs//helm-hide-minibuffer-maybe ()
+  &quot;Hide minibuffer in Helm session if we use the header line as input field.&quot;
+  (when (with-helm-buffer helm-echo-input-in-header-line)
+    (let ((ov (make-overlay (point-min) (point-max) nil nil t)))
+      (overlay-put ov &#39;window (selected-window))
+      (overlay-put ov &#39;face
+                   (let ((bg-color (face-background &#39;default nil)))
+                     `(:background ,bg-color :foreground ,bg-color)))
+      (setq-local cursor-type nil))))
+
+
+(add-hook &#39;helm-minibuffer-set-up-hook
+          &#39;spacemacs//helm-hide-minibuffer-maybe)
+
+(setq helm-autoresize-max-height 0)
+(setq helm-autoresize-min-height 20)
+(helm-autoresize-mode 1)
+
+(helm-mode 1)</code></pre>
+<h2 id="つかいかた">つかいかた</h2>
+<p>Helmを使うと「ふつうのEmacsと使用感ぜんぜん違う！」と思うでしょう. だけど一度Helmに慣れるともう離れられなくなります. もしも, Helmがあんまり好きじゃなかったらIdoを使いましょう. Idoについては後ほど紹介します. さて, helmの使い方を見ていきましょう.</p>
+<p>Helmによる補完はふつうのEmacsの補完とはすいぶん異なります:</p>
+<ul>
+<li><p>Helmでは補完に<strong>TAB</strong>を使いません.</p></li>
+<li><p>まず探している子の名前の一部を入力します. スペース区切りでand検索もできます. この「名前の一部」を<strong>patterns</strong>と呼びます. Patternsは正規表現でもいいです.</p></li>
+<li><p>Helmはこの<strong>patterns</strong>に一致する子たちを探し, 一致する順にソートしてバッファに表示してくれます. <strong>RET</strong>で選択できます.</p></li>
+<li><p>Helmのバッファ内では<strong>C-p</strong>と<strong>C-n</strong>でカーソルを動かしたり, <strong>C-v</strong>と<strong>M-v</strong>でページを移動したりできます.</p></li>
+<li><p><strong>C-SPC</strong>で候補にmarkすることができます. 複数の候補に同じ操作をしたい時などに便利です. <strong>M-a</strong>で全選択(mark)できます.</p></li>
+<li><p>マークした候補を<strong>C-c C-i</strong>でカレントバッファに挿入できます.</p></li>
+<li><p><strong>C-t</strong>でHelmバッファを縦分割にできます. もう一度<strong>C-t</strong>を入力すると横分割に戻ります.</p></li>
+</ul>
+<p><strong>C-x b</strong>で<code>helm-mini</code>が起動するので, それで練習してみましょう. 2つ以上のバッファをmarkして<strong>RET</strong>すると, markしたものすべてを開きます.</p>
