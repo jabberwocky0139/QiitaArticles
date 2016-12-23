@@ -2,6 +2,7 @@ import numpy as np
 from scipy.integrate import odeint, simps
 from scipy import constants
 import matplotlib.pyplot as plt
+import matplotlib.animation as animation
 import seaborn as sbn
 
 
@@ -48,17 +49,31 @@ G = 1
 var = np.array([0, 4, 0, 0, -3, 0, 0, 0, 0, 0, 0, 0])
 t = np.linspace(0, 70, 3e7)
 
-var = odeint(manybody, var, t, args=(m3, m4, m5, G), full_output=False)
+var = odeint(manybody, var, t, args=(m3, m4, m5, G), full_output=False)[::50000]
 
-plt.plot(var[:, 0][::1000], var[:, 1][::1000], label="3")
-plt.plot(var[:, 4][::1000], var[:, 5][::1000], label="4")
-plt.plot(var[:, 8][::1000], var[:, 9][::1000], label="5")
-
-plt.legend(loc="best")
-plt.axis("scaled")
+# plt.plot(var[:, 0], var[:, 1], label="3")
+# plt.plot(var[:, 4], var[:, 5], label="4")
+# plt.plot(var[:, 8], var[:, 9], label="5")
+fig = plt.figure(figsize=(6, 6))
 plt.xlim(-6, 4)
 plt.ylim(-4, 6)
-plt.show()
+ims = []
+for v3x, v3y, v4x, v4y, v5x, v5y in zip(var[:, 0], var[:, 1], var[:, 4], var[:, 5], var[:, 8], var[:, 9]):
+    im = plt.plot([v3x, v4x, v5x], [v3y, v4y, v5y], '.k', markersize=14)
+    ims.append(im)
+    
+Writer = animation.writers['ffmpeg']
+# writer = Writer(fps=15, bitrate=1800)
+writer = Writer(fps=60)
+ani = animation.ArtistAnimation(fig, ims, interval=30)
+ani.save("output2.mp4", writer=writer)
+
+
+# plt.legend(loc="best")
+# plt.axis("scaled")
+# plt.xlim(-6, 4)
+# plt.ylim(-4, 6)
+# plt.show()
 
 # fig = plt.figure()
 # ax = fig.gca(projection='3d')
