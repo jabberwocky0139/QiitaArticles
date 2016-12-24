@@ -1,24 +1,36 @@
 <!---
-    Helm事始め(helm-intro 和訳)
+    初心者〜初級者のためのHelm事始め : 前編
 -->
+<h1 id="対象">対象</h1>
+<p>Emacs及びHelmの初心者〜初級者を対象にしています. ちなみにこれを書いている人は初級者です.</p>
 <h1 id="あらまし">あらまし</h1>
-<p>訳は「ノリ &gt;&gt; 正確性」です. 原文と異なる表現にしているところもたくさんあります.</p>
-<h1 id="a-package-in-a-league-of-its-own-helm">A Package in a league of its own: <code>helm</code></h1>
-<p><u>作者さんたち:</u></p>
+<p>HelmはEmacsにおける様々なものを検索するための統一的なインターフェイスを提供してくれる非常に大きなパッケージです. とっても便利らしいのだけど, 機能がいっぱいありすぎてちょっと手に余る子だなと思っていました. 実際自分が使えているのはほんの一部の機能だけです. 勉強しようにもどこから手を付けてよいかわからない状態でした.</p>
+<p>そんなときにHelmの主要な機能についてうまくまとめてくれている記事を見つけました.</p>
+<p><a href="https://tuhdo.github.io/helm-intro.html">A Package in a league of its own: <code>Helm</code></a></p>
+<p>tuhdoさんという方が書いてくれているようです. ありがたや. これほどHelmの機能について包括的にまとめている日本語の情報源もあまりないなと思ったので翻訳してみました. これを読めばHelm中級者くらいになれるんじゃないかと期待しています. 既に中級者以上の方にも新しい気づきがあるかもしれません.</p>
+<p>ちなみにtuhdoさんはHelm以外にもEmacsに関するガイドをいくつか書いていらっしゃいます.</p>
+<h2 id="注意点">注意点</h2>
+<ul>
+<li><p>内容は<strong>翻訳に近い要約</strong>です. 情報量で言えば「原文 &gt; この記事」です. 原文と違う表現をしている箇所が多々あります.</p></li>
+<li><p>自分の英語力とEmacs力が圧倒的に足りないので, 誤訳であったりtuhdoさんの意図を汲みとり切れていないところが多々あると思います. <strong>この記事に至らないどころを感じるとすれば, その責任はすべて自分にあります.</strong></p></li>
+<li><p>ぜひ原文の方も目を通してみてください. ここには載せていない, GIFによるデモ動画も載っています. 「ここの訳違うよ！」「こう書いたほうがいいと思う」などあれば, コメント欄や編集リクエストにてやさしく教えて頂けると幸いです.</p></li>
+</ul>
+<h1 id="a-package-in-a-league-of-its-own-helm">A Package in a league of its own: <code>Helm</code></h1>
+<p><strong>作者さんたち:</strong></p>
 <ul>
 <li><p>Tamas Patrovic (-2007). 最初の開発者さん. このときは<code>Anything</code>という名前でした.</p></li>
 <li><p>るびきち (2008-2011). このときもまだ<code>Anything</code>.</p></li>
 <li><p>Thierry Volpiatto (2011-). 現在のメンテナさん. このときに<code>Anything</code>は<code>Helm</code>に生まれ変わりました.</p></li>
 </ul>
-<p><u>ホームページ:</u> <a href="https://github.com/emacs-helm/helm">GitHub</a></p>
-<p><u><code>Helm</code>の特徴</u></p>
-<p><font color="HotPink"> <code>Helm</code>はEmacsでインクリメンタルに補完や検索をするためのフレームワークです. </font>Emacsで何か(Bufferやファイルなど)を探しているときに, 役に立ってくれます.</p>
-<p>Helmは<code>anything.el</code>(Tamas Patrovicさん作)のフォークで, 言わば<code>anything.el</code>のご子息です. <code>anything.el</code>のレガシーコードをお掃除することに始まり, <font color="HotPink">いろんなツールを用意してくれています.</font> しかもそれらは下位互換に縛られるようなことはありません.</p>
-<p><u>インストール:</u></p>
+<p><strong>ホームページ:</strong> <a href="https://github.com/emacs-helm/helm">GitHub</a></p>
+<p><strong><code>Helm</code>の特徴</strong></p>
+<p><code>Helm</code>はEmacsでインクリメンタルに補完や検索をするためのフレームワークです. Emacsで何か(Bufferやファイルなど)を探しているときに, 役に立ってくれます.</p>
+<p>Helmは<code>anything.el</code>(Tamas Patrovicさん作)のフォークで, 言わば<code>anything.el</code>のご子息です. <code>anything.el</code>のレガシーコードをお掃除することに始まり, いろんなツールを用意してくれています. しかもそれらは下位互換に縛られるようなことはありません.</p>
+<p><strong>インストール:</strong></p>
 <p><a href="https://github.com/bbatsov/prelude">Emacs Prelude</a>か<a href="https://github.com/syl20bnr/spacemacs">Spacemacs</a>では最初からセットアップされており, このガイドにあるような設定は必要ないです. でも<a href="https://github.com/bbatsov/prelude">Emacs Prelude</a>ではHelmがデフォルトで無効になってます. <a href="https://github.com/bbatsov/prelude#helm">ここ</a>を見て有効にしてください. <a href="https://github.com/syl20bnr/spacemacs">Spacemacs</a>はデフォルトで有効です.</p>
 <p>もしSpacemacsユーザーなら, もうなんにもしなくていいです. ふつうのEmacsユーザーなら<code>M-x list-packages</code>で<strong>helm</strong>を選んでインストールしましょう. インストールが終わったら以下の設定を追加してhelmを有効にしましょう.</p>
 <p>最小設定:</p>
-<pre class="elisp"><code>(require &#39;helm-config)
+<pre class="emacs-lisp"><code>(require &#39;helm-config)
 (helm-mode 1)</code></pre>
 <p>拡張設定:</p>
 <pre class="elisp"><code>(require &#39;helm)
@@ -76,3 +88,308 @@
 <li><p><strong>C-t</strong>でHelmバッファを縦分割にできます. もう一度<strong>C-t</strong>を入力すると横分割に戻ります.</p></li>
 </ul>
 <p><strong>C-x b</strong>で<code>helm-mini</code>が起動するので, それで練習してみましょう. 2つ以上のバッファをmarkして<strong>RET</strong>すると, markしたものすべてを開きます.</p>
+<p><strong>だいじなこと:</strong> <em>決して補完に<strong>TAB</strong>を使わないことを覚えておいてください. ふつうのEmacsやIdoとは違います. Helmではpatternsを打ちこめば<strong>TAB</strong>を押さなくても候補が自動的に絞られます. これはHelmの特徴であり, 欠点ではありません. <strong>TAB</strong>で候補を絞る習慣は忘れましょう！Helmバッファでpatternsの素早い補完をしたければ, <code>hippie-expand</code>が従来の<strong>TAB</strong>の役割を担ってくれます. Helmを使いはじめるとこの<strong>TAB</strong>まわりの挙動が大きな混乱を招きますが, 慣れたら絶対に好きになるって！</em></p>
+<p>Helmコマンドを実行したいときはHelmセッションに入りましょう.</p>
+<blockquote>
+<p>Helmセッションとは, 例えば<code>helm-mini</code>とか<code>helm-find-files</code>とかのことを指します.</p>
+</blockquote>
+<p>HelmセッションにいるときはHelmバッファが常に開いており, Helmセッションから出るとそのバッファは閉じられます. Helmセッションにいるときは以下の3つのコマンドを覚えておかなきゃいけません:</p>
+<ul>
+<li><p><strong>TAB</strong>action menuを表示する<strong>helm-select-action</strong>です. action menuを開くとカレントHelmセッションから出て, markした候補に対するactionのリストが表示されます. <code>Find File</code>とか<code>Find Dired</code>とか<code>Grep File</code>とかで使えます.</p></li>
+<li><p><strong>C-z</strong>は<strong>helm-excute-persistent-action</strong>です. persistent actionを実行してもHelmセッションから出ることはありません.</p></li>
+</ul>
+<blockquote>
+<p>persistent actionとは, つまり従来の<strong>TAB</strong>補完に相当するものです.</p>
+</blockquote>
+<ul>
+<li><code>helm-find-files</code>や<code>helm-mini</code>とかのいくつかのHelmセッションでは, <code>grep</code>とか<code>open</code>とかのアクションを複数の候補に対して実行できます.</li>
+</ul>
+<p>...なんですが, <strong>TAB</strong>と<strong>C-z</strong>を入れ替えちゃいましょう. <strong>helm-select-action</strong>よりも<strong>helm-excute-persistent-action</strong>の方がよく使うので, このほうが<strong>TAB</strong>を便利に使えるでしょう:</p>
+<pre class="emacs-lisp"><code>(define-key helm-map (kbd &quot;&lt;tab&gt;&quot;) &#39;helm-execute-persistent-action) ; rebind tab to do persistent action
+(define-key helm-map (kbd &quot;C-i&quot;) &#39;helm-execute-persistent-action) ; make TAB works in terminal
+(define-key helm-map (kbd &quot;C-z&quot;)  &#39;helm-select-action) ; list actions using C-z</code></pre>
+<p>Helmセッションでは<strong>C-c ?</strong>がヘルプにあたり, マニュアルを参照できます.</p>
+<h2 id="helmのいいところ">Helmのいいところ</h2>
+<ul>
+<li><p><strong><em>シンプルで一貫性のあるインターフェイス</em></strong>: どのHelmセッションもシンプルで共通のインターフェイスを持っています: patternsを入力するミニバッファと, 候補を表示するHelmバッファです. インターフェイスがシンプルなので入門も容易ですね.</p></li>
+<li><p><strong><em>対話型</em></strong>: Helmはとっても対話的な子です: ユーザーがタイプすればすぐにHelmバッファの候補が更新されます. この特徴のおかげで, Helmは他には無いようなユニークなコマンドを持っています. 例えば<code>helm-ff-run-grep</code>などがあり, この子はgrepの結果をタイプするごとに更新してくれます.</p></li>
+<li><p><strong><em>まず探しているものを. 何をするかはあとで</em></strong>: Helmではお目当ての物を探しあてるまで, 何を実行するかは考える必要がないのです. たとえば, とあるファイルをカレントウィンドウに開くか, それとも別のウィンドウに開くかは, ふつう<strong>ファイルを開く前に</strong>決めなければいけませんが, Helmではまずファイルを探すことに集中し, <strong>見つけたあとに</strong>カレントウィンドウに開くなり別ウィンドウに開くなりを決めればよいのです. これは大きなアドバンテージでして, 何を実行するかの目測を誤ってもコマンドを中止する必要がないのです. たとえばふつう, <strong>C-x C-f</strong>を実行したあとに「別ウィンドウに開いたほうがいいな」と思ったら, <strong>C-g</strong>でキャンセルして<strong>C-x 4 C-f</strong>を実行しなおさなければならないのです.</p></li>
+<li><p><strong><em>マッチング</em></strong>: これはHelmの他にはないとっても強力な特徴です. そう, 正規表現です. regexpのようにsearch patternを入力できるのです.</p></li>
+</ul>
+<blockquote>
+<p><font color="HotPink">...以下省略...</font> <!---あたらしいプロジェクトを探しているようなケースでは, Helmを使っていると, プロジェクトの構造をインタラクティブに"学ぶ"ことができるのです. Linuxのカーネルソースに初めて触った私は, `x86`アーキテクチャにある`main.c`を探してさまよっています. `x86`ディレクトリがソースツリーのどこかにあることと, その中に`main.c`があることはわかっています. そのファイル名は`main.c`か`x86-main.c`であるはずです. これらの断片的な情報でもって, --></p>
+</blockquote>
+<blockquote>
+<p>なぜ省略しているかというと, 自分は正規表現について語れることが何一つ無いからです. 誤訳が恐ろしくて省略しました. 是非原文を読んでください. デモ動画もあります.</p>
+</blockquote>
+<ul>
+<li><strong><em>パフォーマンス</em></strong>: Helmは候補のリストが30000個程度なら問題なく動きます.</li>
+</ul>
+<h2 id="カーソル付近のテキスト">カーソル付近のテキスト</h2>
+<p>既にHelmセッションにいるなら, 以下のコマンドによってカレントバッファの入力を引っ張ってくることができます:</p>
+<ul>
+<li><p><strong>C-w</strong>で, カレントバッファのカーソル位置の後ろにある単語をHelmミニバッファにヤンクできます.</p></li>
+<li><p><strong>M-n</strong>でカーソル位置にあるシンボルをヤンクできます.</p></li>
+</ul>
+<p><code>helm-mode</code>が有効なら, ヘルプコマンドでも同様にカーソル位置のシンボルを引っ張ってくることができます:</p>
+<ul>
+<li><p><strong>C-h f</strong>は<code>describe-function</code>で, カーソル位置のシンボルを検索してくれます.</p></li>
+<li><p><strong>C-h v</strong>は<code>describe-variable</code>で, 右に同じ.</p></li>
+<li><p><strong>C-h w</strong>は<code>where-is</code>で, 右に同じ.</p></li>
+</ul>
+<p>これらのコマンドは自動的にHelmを利用します.</p>
+<h2 id="autoresize">Autoresize</h2>
+<p><code>helm-autoresize-mode</code>が有効なら, Helmバッファのサイズを候補の数に応じて自動的にリサイズしてくれます.</p>
+<pre class="emacs-lisp"><code>(helm-autoresize-mode t)</code></pre>
+<p>バッファの大きさの最大値と最小値をカスタマイズできます. いじる変数は</p>
+<ul>
+<li><p><code>helm-autoresize-max-height</code></p></li>
+<li><p><code>helm-autoresize-min-height</code></p></li>
+</ul>
+<p>デフォルトでは<code>helm-autoresize-max-height</code>は40に設定されており, これはHelmバッファサイズの最大値がフレーム全体の40％であることを意味しています. <code>helm-autoresize-min-height</code>についても同様です.</p>
+<p>もしHelmウィンドウを勝手にリサイズされたくなかったら, <code>helm-autoresize-max-height</code>と<code>helm-autoresize-min-height</code>を同じ値に設定すればよいです.</p>
+<p>もし<a href="https://github.com/roman/golden-ratio.el">golden-ratio</a>を使ってたら, Helmウィンドウについては無効にしてください(Spacemacsを使ってたら以下の設定はいらないです):</p>
+<pre class="emacs-lisp"><code>(defun pl/helm-alive-p ()
+  (if (boundp &#39;helm-alive-p)
+      (symbol-value &#39;helm-alive-p)))
+
+(add-to-list &#39;golden-ratio-inhibit-functions &#39;pl/helm-alive-p)</code></pre>
+<h2 id="コマンド-helm-m-x">コマンド: <code>helm-M-x</code></h2>
+<p><strong>キーバインド</strong>:</p>
+<p>デフォルトではバインドされていません. 以下で追加しましょう:</p>
+<pre class="emacs-lisp"><code>(global-set-key (kbd &quot;M-x&quot;) &#39;helm-M-x)</code></pre>
+<p><strong>解説</strong>:</p>
+<p><code>M-x</code>の機能と<code>helm-M-x</code>との違いを見てみましょう. <code>M-x</code>でEmacsにおけるコマンドのリストを見ることができます. そのリストをみて「コマンド多すぎでしょうが！」と思うかもしれません. でも<code>M-x</code>のことは嫌いにならないであげてください. 少し下まで読めばありがたみがわかるんで！</p>
+<p>では<code>li pa</code>とタイプしてみましょう. すると<code>list-packages</code>が候補のいちばん上に躍り出ました！ <code>pa ^li</code>も同様にタイプしてみましょう.</p>
+<p><code>helm-M-x</code>はデフォルトの<code>M-x</code>よりも優秀な子です. なぜなら, 候補の横にそのコマンドのキーバインドも表示してくれるし, <strong>TAB</strong>でコマンドのドキュメントも表示してくれます.</p>
+<p>バージョン1.6.5では<code>helm-M-x</code>はあいまい一致検索(fuzzy matching)が可能ですが, デフォルトでは無効になっています. 有効にするには以下のようにします:</p>
+<pre class="emacs-lisp"><code>(setq helm-M-x-fuzzy-match t) ;; optional fuzzy matching for helm-M-x</code></pre>
+<p><strong>注釈</strong>: <code>helm-M-x</code>を<strong>M-x</strong>に手動で設定する必要があります. 設定しなくともデフォルトの<code>M-x</code>でもHelmの補完機能は使えますが, キーバインドの表示はしてくれませんし, <strong>TAB</strong>でドキュメントを参照することもできません. もうひとつの重要なことは, prefix argumentは<code>helm-M-x</code>を実行したあとに入力することです. <code>helm-M-x</code>を実行する前にprefix argumentを入力してもなにも起こりません.</p>
+<blockquote>
+<p>prefix argumentとは<code>C-u 3...</code>みたいな子です. この子は「あとに続くコマンドを3回呼び出しなさい」という意味です.</p>
+</blockquote>
+<div class="figure">
+<img src="./images/figure21.png" />
+
+</div>
+<h2 id="コマンド-helm-show-kill-ring">コマンド: <code>helm-show-kill-ring</code></h2>
+<p><strong>キーバインド</strong>:</p>
+<p>デフォルトではバインドされていません. 以下で追加しましょう:</p>
+<pre class="emacs-lisp"><code>(global-set-key (kbd &quot;M-y&quot;) &#39;helm-show-kill-ring)</code></pre>
+<p><strong>解説</strong>:</p>
+<p><code>C-y</code>のあとに<code>M-y</code>を押すことでキルリングをぐるぐる回れることを覚えていますか？ ただこの機能はデフォルトではとっても使いづらいです. キルリングに登録されたものをいちいち覚えていられないですからね. キルリングを見るためには<strong>C-h v</strong>のあとに<code>kill-ring</code>とタイプしなければなりません. あまりよい方法ではないでしょう.</p>
+<p><code>helm-show-kill-ring</code>はこの問題を解決してくれます. Helmはキルリングを見やすい形式で表示してくれて, かつ<strong>patterns</strong>で絞り込みができます. これでデフォルトの<code>M-y</code>の負担から解放されますね.</p>
+<p>上記の設定で<code>M-y</code>は<code>helm-show-kill-ring</code>にバインドされます. 是非とも使ってみてください. デフォルトよりも随分と楽になりますよ.</p>
+<div class="figure">
+<img src="./images/figure22.png" />
+
+</div>
+<h2 id="コマンド-helm-mini">コマンド: <code>helm-mini</code></h2>
+<p><strong>キーバインド</strong>:</p>
+<p>デフォルトではバインドされていません. 以下で追加しましょう:</p>
+<pre class="emacs-lisp"><code>(global-set-key (kbd &quot;C-x b&quot;) &#39;helm-mini)</code></pre>
+<p>あいまい一致を有効にするには以下を追加しましょう:</p>
+<pre class="emacs-lisp"><code>(setq helm-buffers-fuzzy-matching t
+      helm-recentf-fuzzy-match    t)</code></pre>
+<p><strong>解説</strong>:</p>
+<p><code>helm-mini</code>はいろいろなソースを包括的に扱えます:</p>
+<ul>
+<li><p>現在開いているバッファを<code>Buffers</code>に表示します</p></li>
+<li><p>最近開いたファイルと<code>Recentf</code>に表示します</p></li>
+<li><p><code>Create Buffer</code>を<strong>RET</strong>することで新しいバッファを作ります</p></li>
+</ul>
+<p><strong><left></strong>と<strong><right></strong>で異なるグループ間を行き来できます. scroll down/upとか<strong>C-v</strong>や<strong>M-v</strong>も普通に使えます.</p>
+<p>patternsとして<code>*&lt;major-mode&gt;</code>のように入力すると, そのメジャーモードに該当する候補を表示します. 例えば<code>*dired</code>と入力すると, Diredバッファに絞り込んでくれます. <code>*!dired</code>と入力すると, Dired modeじゃないバッファを表示します.</p>
+<p>patternsとして<code>/directory</code>のように入力するとディレクトリ単位の検索もできます. 例えば<code>/.emacs.d/</code>と入力すれば, <code>.emacs.d</code>内のファイルに絞り込みます. <code>!/.emacs.d/</code>とすると, <code>.emacs.d</code>にないバッファを表示します.</p>
+<div class="figure">
+<img src="./images/figure23.png" />
+
+</div>
+<p><code>helm-mini</code>はpatternsに<code>@</code>を前置することで, バッファ名ではなくバッファの内容で絞り込むこともできます. 正規表現もOKです. 例えば, <code>test</code>という文字を含んだバッファを絞り込みたければpatternsを<code>@test</code>とすればよいのです. さらにそのバッファ内の何行目に<code>test</code>という文字が含まれているのかが知りたければ, <strong>C-s</strong>と入力します. すると, <code>helm-mini</code>セッションは<code>helm-moccur</code>にスイッチされ, 候補が表示されます.</p>
+<div class="figure">
+<img src="./images/figure24.png" />
+
+</div>
+<p>バッファの文字色とprefixの意味は以下の通りです:</p>
+<ul>
+<li><p>リモートバッファには<code>@</code>がついています.</p></li>
+<li><p><font color="Red">Red</font> =&gt; 外部プロセスによって書き換えられたバッファ</p></li>
+<li><p><font color="#EE6363">Indianred2</font> =&gt; バッファは存在してるけどファイルは削除されてしまったもの</p></li>
+<li><p><font color="Orange">Orange</font> =&gt; バッファの内容が変更されたが保存されていないもの</p></li>
+<li><p><em>Italic</em> =&gt; ファイルではないバッファ</p></li>
+</ul>
+<p>Emacsのテーマによって色は変わります. 自分のカラーテーマではどのように対応しているのかを確認しておきましょう.</p>
+<p>例:</p>
+<ul>
+<li><p><code>*lisp ^helm @moc</code>と入力すると「lisp-modeで, ファイル名が&quot;helm&quot;からはじまり, バッファの内容に&quot;moc&quot;を含むもの」に絞り込まれます.</p></li>
+<li><p>絞り込むメジャーモードを追加したければ, <code>,</code>で区切ります. 例えば<code>*!lisp,!sh,!fun</code>と入力すると「lisp-modeでもsh-modeでもfundamental-modeでもないバッファ」に絞り込まれます.</p></li>
+<li><p><code>*lisp ^helm moc</code>は<code>moc</code>の前に<code>@</code>がついていないので「lisp-modeで, ファイル名が&quot;helm&quot;からはじまり, さらに&quot;moc&quot;を含むもの」に絞り込みます.</p></li>
+<li><p><code>*!lisp !helm</code>は「lisp-modeでなく, ファイル名に&quot;helm&quot;を含まないもの」に絞り込みます.</p></li>
+<li><p><code>/helm/ w3</code>は「&quot;helm&quot;ディレクトリ内の, ファイル名に&quot;w3&quot;を含むもの」に絞り込みます.</p></li>
+</ul>
+<p><code>helm-mini</code>は<code>ibuffer</code>の対話型バージョンのようなものです.</p>
+<p><em>類似のコマンド</em>:</p>
+<ul>
+<li><code>helm-multi-files</code>: BuffersとRecentfとFiles from Current Directoryのリストを表示します. <code>helm-mini</code>ならファイルが見つからなかったときは一番上にCreate bufferが来て, 名前がpatternのバッファを作ることができますが, <code>helm-multi-file</code>はブランクバッファが表示されます.</li>
+</ul>
+<div class="figure">
+<img src="./images/figure25.png" />
+
+</div>
+<ul>
+<li><p><code>helm-locate</code>はシステム内すべてのファイルを検索できます.</p></li>
+<li><p><code>helm-buffers-list</code>: <code>helm-mini</code>と似ていますが, 最近開いたファイルを<code>recentf</code>ではなく<code>ido-virtual-buffers</code>で参照します. これは<code>ido</code>が提供する, 最近開いたファイルを管理する子です. virtual bufferはパスを含んでいません. 設定のしかたによっては<code>helm-mini</code>の代わりにもなります. <code>helm-buffers-fuzzy-matching</code>を有効にしていると, <code>ido-virtual-buffers</code>でもあいまい一致が有効になります.</p></li>
+</ul>
+<h2 id="コマンド-helm-find-files">コマンド: <code>helm-find-files</code></h2>
+<p><strong>キーバインド</strong>:</p>
+<p>デフォルトでも<strong><helm-prefix> C-x C-f</strong>でバインドされていますが, 長いので以下のようにするといいでしょう:</p>
+<pre class="emacs-lisp"><code>(global-set-key (kbd &quot;C-x C-f&quot;) &#39;helm-mini)</code></pre>
+<p><strong>解説</strong>:</p>
+<p><code>helm-find-files</code>は強化されたファイルナビゲーターです.</p>
+<ul>
+<li><p><code>helm-find-files</code>はカレントディレクトリにおけるあいまい一致をサポートします. たとえば&quot;fob&quot;や&quot;fbr&quot;のようなミスタイプでも&quot;foobar&quot;を補完できます.</p></li>
+<li><p><strong>C-z</strong>でファイル名補完ができます...が, この記事の最初のほうでやった設定では<strong>TAB</strong>に設定し直しています. up/downや<strong>M-<next>, M-<prior></strong>でスクロールできます.</p></li>
+<li><p><strong>C-j</strong>でハイライトした候補に絞り込み, もう一度<strong>C-j</strong>を入力するとバッファの中身が覗けます. <strong>C-l</strong>で戻れます.</p></li>
+<li><p><strong>C-l</strong>でひとつ上のディレクトリに移動できます. <strong>C-r</strong>で戻れます.</p></li>
+<li><p>ディレクトリを新しく作るには重複しない名前をpatternに入力した後, 最後に<code>/</code>を追加して<strong>RET</strong>. その後は作成したディレクトリに入ります.</p></li>
+<li><p>ファイルを新しく作るには, ファイル名を入力してHelmバッファの一番上に表示される<code>[?]</code>が先頭についた候補を<strong>RET</strong>します.</p></li>
+<li><p><strong>C-s</strong>で<code>grep</code>っぽいことができます. <strong>C-u C-s</strong>でrecursive grepです.</p></li>
+<li><p>patternの最後に<code>~/</code>を入力するとホームディレクトリにすぐ戻れます.</p></li>
+<li><p>patternの最後に<code>/</code>を入力するとルートディレクトリにすぐ戻れます.</p></li>
+<li><p>patternの最後に<code>./</code>を入力するとカレントディレクトリにすぐ戻れます.</p></li>
+</ul>
+<p><code>helm-select-action</code>を使えばもっといろんなことができます. デフォルトでは<strong>TAB</strong>, この記事の設定では<strong>C-z</strong>にバインドされています. action menuにあるactionについてのガイドは<a href="http://tuhdo.github.io/helm-projectile.html">Exploring large projects with Projectile and Helm Projectile</a>に書いています. なんでここに書かないのかというと, 結局のところ<a href="https://github.com/bbatsov/projectile">Projectile</a>を使ったほうがもっと効率的にファイルのナビゲーションが行えるからです.</p>
+<div class="figure">
+<img src="./images/figure26.png" />
+
+</div>
+<p>Find file at point:</p>
+<p><code>ffap</code>って知ってます？<code>helm-find-files</code>でもできます. ファイルパスに相当する文字列にカーソルを合わせて<code>M-x ffap</code>とすると, そのファイルパスがミニバッファに入力された状態になります. しかし, もう<code>ffap</code>を覚える必要はありません. カーソルを合わせて<code>C-x C-f</code>でOKです.</p>
+<p>履歴:</p>
+<p><code>helm-find-files</code>のセッションで<strong>C-c h</strong>を入力すると, 過去に訪れたファイルを表示してくれます.</p>
+<h2 id="コマンド-helm-semantic-or-imenu">コマンド: <code>helm-semantic-or-imenu</code></h2>
+<p><strong>キーバインド</strong>:</p>
+<p><strong><prefix> i</strong> (デフォルトでは<strong>C-x c</strong>. この記事の設定では<strong>C-c h</strong>)</p>
+<p><strong>解説</strong>: Imenuはいろいろな定義を探す方法を提供します. たとえば関数定義とか変数定義とか. <code>imenu</code>も<code>helm-semantic-or-imenu</code>と独立に実行できます.</p>
+<p>Semanticを有効にすると, 訪れたファイルの内容を自動的にパースしてくれます. このパーサはC/C++ではきっちり動いてくれます. <code>(semantic-mode 1)</code>で有効にできます.</p>
+<blockquote>
+<p>文法解釈を自動的にやってくれるんですね. その結果, 変数なり関数なりの定義を追えるようになるのかな？</p>
+</blockquote>
+<p>HelmではSemanticとImenuを一緒にしたインターフェイスを提供してくれます. <code>semantic-mode</code>がカレントバッファで有効なら, 自動的にタグ付けしてくれて<code>imenu</code>に落とし込んでくれます. カーソルが適当なシンボルの上にあれば, <code>helm-semantic-or-imenu</code>のバッファは最初からそのシンボルを指してくれます.</p>
+<p><code>helm-semantic-or-imenu</code>はC/C++以外でもだいたい同様に動作してくれます. たとえばJava, Python, Ruby, Emacs Lisp and Lisp in general, shell script, Org-mode等々.</p>
+<p><code>Semantic</code>と<code>Imenu</code>のあいまい一致を有効にしたいなら以下のようにしましょう:</p>
+<pre class="emacs-lisp"><code>(setq helm-semantic-fuzzy-match t
+      helm-imenu-fuzzy-match    t)</code></pre>
+<p><strong>つかいかた</strong></p>
+<ul>
+<li><p><strong>C-c h i</strong>で実行</p></li>
+<li><p><strong>C-p/C-n</strong>でカーソル移動, <strong>C-<down>/C-<up></strong>でカーソルの指すタグにカレントバッファが移動してくれます.</p></li>
+<li><p>カーソルがタグに登録されたシンボルの上, もしくは内部にあれば, <code>helm-semantic-or-imenu</code>のバッファは最初からそのシンボルを指してくれます.</p></li>
+</ul>
+<p>Helmでは<code>beginning-of-defun</code>(<strong>C-M-a</strong>)と<code>end-of-defun</code>(<strong>C-M-e</strong>)を使えますが, <code>helm-semantic-or-imenu</code>はこれと同様かそれ以上のの動作をしてくれます. <code>C-g</code>でキャンセルしたら, <code>helm-semantic-or-imenu</code>を実行する前のカーソル位置に戻してくれます. この挙動は<code>helm-semantic-or-imenu</code>のみ対応しており, <code>imenu</code>では使えません.</p>
+<p><code>helm-semantic-or-imenu</code>は以下の種類のタグをサポートしています:</p>
+<ul>
+<li><p><code>Dependencies</code>: C/C++だとヘッダーファイルのincludeなど.</p></li>
+<li><p><code>Variables</code>: カレントバッファ内の変数</p></li>
+<li><p><code>Functions</code>: カレントバッファ内の関数</p></li>
+<li><p><code>Privides</code>: Emacs-Lispだと<code>(provide ...)</code>とか</p></li>
+</ul>
+<p>タグの種類ごとにフィルタリングしたいときは<code>^</code>を前置してください.</p>
+<div class="figure">
+<img src="./images/figure27.png" />
+
+</div>
+<h2 id="コマンド-helm-man-woman">コマンド: <code>helm-man-woman</code></h2>
+<p><strong>キーバインド</strong>:</p>
+<p><strong><prefix> m</strong> (デフォルトでは<strong>C-x c</strong>. この記事の設定では<strong>C-c h</strong>)</p>
+<p><strong>解説</strong>:</p>
+<p><code>helm-man-woman</code>を使うとマニュアルページに素早く飛べます. ミニバッファにpatternを入力することも, カーソルの指すシンボルをそのまま検索することもできます. 後者を有効にするには以下の設定を追加しましょう:</p>
+<pre class="emacs-lisp"><code>(add-to-list &#39;helm-sources-using-default-as-input &#39;helm-source-man-pages)</code></pre>
+<div class="figure">
+<img src="./images/figure28.png" />
+
+</div>
+<h2 id="コマンド-helm-find">コマンド: <code>helm-find</code></h2>
+<p><strong>キーバインド</strong>:</p>
+<p><strong><prefix> /</strong> (デフォルトでは<strong>C-x c</strong>. この記事の設定では<strong>C-c h</strong>)</p>
+<p><strong>解説</strong>:</p>
+<p>Unixの<code>find</code>コマンドに対応するもの. patternはいつもどおりスペース区切りでいけますが, Unixの<code>find</code>を内部で回しているので, ワイルドカード<code>*</code>も使えます.</p>
+<p>デフォルトではカレントディレクトリのみ検索しますが, <code>C-u</code>を前置すればどのディレクトリ内を検索するかを尋ねてくれます. また, <code>helm-find</code>は<code>helm-find-files</code>のセッション内で<strong>C-c /</strong>をタイプすることで実行できます.</p>
+<p><code>helm-find</code>は大きなディレクトリ内で検索をかけると動作がとっても遅くなります. そのときは, <strong>C-!</strong>で, 候補を活かしたままサスペンドすることができます. レジュームするにはもう一度<strong>C-!</strong>です.</p>
+<div class="figure">
+<img src="./images/figure29.png" />
+
+</div>
+<h2 id="コマンド-helm-locate">コマンド: <code>helm-locate</code></h2>
+<p><strong>キーバインド</strong>:</p>
+<p><strong><prefix> l</strong> (デフォルトでは<strong>C-x c</strong>. この記事の設定では<strong>C-c h</strong>)</p>
+<p><strong>解説</strong>:</p>
+<p><code>helm-find</code>に似ていますが, こちらは内部でUnixの<code>locate</code>コマンドを回しています. ローカルのデータベースを利用するためには<code>helm-locate</code>の前に<code>C-u</code>を前置してください. こちらも動きが遅くなることがありますが, <code>helm-find</code>同様<strong>C-!</strong>が使えます.</p>
+<p><code>helm-locate</code>であいまい一致を有効にするには以下を追加しましょう:</p>
+<pre class="emacs-lisp"><code>(setq helm-locate-fuzzy-match t)</code></pre>
+<p><code>locate</code>はLinuxのコマンドなので, 他のプラットフォームだとちゃんと動かないかもしれません.</p>
+<div class="figure">
+<img src="./images/figure30.png" />
+
+</div>
+<h2 id="コマンド-helm-occur">コマンド: <code>helm-occur</code></h2>
+<p><strong>キーバインド</strong>:</p>
+<p><strong><prefix> M-s o</strong> (デフォルトでは<strong>C-x c</strong>. この記事の設定では<strong>C-c h</strong>)ですが, コレだと長いので以下のバインドがいいでしょう:</p>
+<pre class="emacs-lisp"><code>(global-set-key (kbd &quot;C-c h o&quot;) &#39;helm-occur)</code></pre>
+<p><strong>解説</strong>:</p>
+<p><code>occur</code>に似ていますが, Helmのインターフェイスを使っています. カレントバッファ内でpatternと一致する行を列挙してくれます. patternとマッチする行を行き来するのに便利です. <strong>TAB</strong>で<code>helm-occur</code>を出ずに, カーソルが指す行に飛んでくれます. <strong>C-g</strong>で<code>helm-occur</code>を終了し, 元の位置に戻ります.</p>
+<div class="figure">
+<img src="./images/figure31.png" />
+
+</div>
+<h2 id="コマンド-helm-apropos">コマンド <code>helm-apropos</code></h2>
+<p><strong>キーバインド</strong>:</p>
+<p><strong><prefix> a</strong> (デフォルトでは<strong>C-x c</strong>. この記事の設定では<strong>C-c h</strong>)</p>
+<p><strong>解説</strong>:</p>
+<p>Helmのコマンド・関数・変数などなどEmacsのありとあらゆるオブジェクトのマニュアルを参照するコマンドです. <code>apropos-command</code>に似ていますが, こちらはインタラクティブです. <code>helm-apropos</code>は以下の5つの子たちを統合しています:</p>
+<ul>
+<li><p>コマンド</p></li>
+<li><p>関数</p></li>
+<li><p>クラス</p></li>
+<li><p>ジェネリック関数</p></li>
+<li><p>変数</p></li>
+<li><p>Faces</p></li>
+<li><p>Helm attributes</p></li>
+</ul>
+<p>あいまい一致も有効にできます:</p>
+<pre class="emacs-lisp"><code>(setq helm-apropos-fuzzy-match t)</code></pre>
+<h2 id="コマンド-helm-info-">コマンド: <code>helm-info-*</code></h2>
+<p><strong>キーバインド</strong>:</p>
+<p><strong><prefix> h</strong> (デフォルトでは<strong>C-x c</strong>. この記事の設定では<strong>C-c h</strong>)</p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Key</th>
+<th align="left">Binding</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left"><strong><prefix> h g</strong></td>
+<td align="left">Command: <code>helm-info-gnus</code></td>
+</tr>
+<tr class="even">
+<td align="left"><strong><prefix> h i</strong></td>
+<td align="left">Command: <code>helm-info-at-point</code></td>
+</tr>
+<tr class="odd">
+<td align="left"><strong><prefix> h r</strong></td>
+<td align="left">Command: <code>helm-info-emacs</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>解説</strong>:</p>
+<p>いろいろな種類のヘルプを開くことができます. 上のようなバインドもありますが, <code>M-x helm info</code>と入力した後に様々なものをくっつけられます. たとえば<code>helm-info-as</code>とか<code>helm-info-gdb</code>とか...</p>
+<h2 id="コマンド-helm-lisp-completion-at-point">コマンド; <code>helm-lisp-completion-at-point</code></h2>
+<p><strong>キーバインド</strong>:</p>
+<p><strong><prefix> <tab></strong> (デフォルトでは<strong>C-x c</strong>. この記事の設定では<strong>C-c h</strong>)</p>
+<p><strong>解説</strong>:</p>
+<p>Emacs Lispを書いている時にEmacsで呼び出せる関数を提供してくれます. たとえば適当に何か書いたあとにこれを実行すると, 補完候補を並べてくれます. これもあいまい一致を有効にできます:</p>
+<pre class="emacs-lisp"><code>(setq helm-lisp-fuzzy-completion t)</code></pre>
+<h1 id="あとがき">あとがき</h1>
+<p>自分はもう目から鱗状態でした. Helmってすごいんだなあと感心しきりです. 息切れしてしまったので, とりあえずここまで. 後編に続きます.</p>
