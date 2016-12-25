@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sbn
-#from collections import deque
+# from collections import deque
 
 
 def logistic(a):
