@@ -7,19 +7,21 @@ from scipy.integrate import dblquad
 def f(x):
     return m.sin(x)
 
+
 def g(x):
     return np.sin(x)
+
 
 def h(x, y):
     return np.exp(-(x**2 + y**2))
 
+
 N, L = 2000, 100
-x, dx = np.linspace(-L/2, L/2, N), L / N
+x, dx = np.linspace(-L / 2, L / 2, N), L / N
 
 a = [[rand() for i in range(N)] for j in range(N)]
 
-
-## 微分
+# --- 微分 ---
 # def myImp():
 #     diff = []
 #     for i in x:
@@ -30,8 +32,7 @@ a = [[rand() for i in range(N)] for j in range(N)]
 # def npImp():
 #     diff = np.gradient(g(x), dx)
 
-
-## 積分
+# --- 積分 ---
 # def myImp():
 #     y, dy = np.linspace(-L/2, L/2, N), L / N
 #     ans = 0
@@ -40,12 +41,14 @@ a = [[rand() for i in range(N)] for j in range(N)]
 #             ans += dx * dy * h(X, Y)
 #     print(ans)
 
+
 # def spImp():
-#     ans = dblquad(h, a=-np.inf, b=np.inf, gfun = lambda x : -np.inf, hfun = lambda x : x)[0]
+#     ans = dblquad(
+#         h, a=-np.inf, b=np.inf, gfun=lambda x: -np.inf, hfun=lambda x: x)[0]
 #     print(ans)
 
-    
-## 行列積
+
+# --- 行列積 ---
 # a = np.array(rand(N, N))
 # b = np.array(rand(N, N))
 # c = np.array([[0] * N for _ in range(N)])
@@ -59,7 +62,7 @@ a = [[rand() for i in range(N)] for j in range(N)]
 # def npImp():
 #     c = np.dot(a, b)
 
-## 固有値方程式
+# --- 固有値方程式 ---
 # L, N = 10, 80
 # x, dx = np.linspace(-L/2, L/2, N), L / N
 
@@ -73,8 +76,6 @@ a = [[rand() for i in range(N)] for j in range(N)]
 # # エルミート行列の固有値方程式
 # H = (K + V) / 2
 # w, v = np.linalg.eigh(H)
-
-
 
 # I = np.eye(N)
 # H = [[0 for i in range(N)] for j in range(N)]
@@ -97,12 +98,12 @@ a = [[rand() for i in range(N)] for j in range(N)]
 #             if(maxValue < abs(H[i][j])):
 #                 maxValue = abs(H[i][j])
 #                 rI, cI = i, j
-                
+
 #     # 収束判定
 #     if(maxValue < 1e-4):
 #         flag = False
 #     # print(maxValue)
-    
+
 #     # 回転行列の用意
 #     theta = None
 #     if(H[cI][cI] == H[rI][rI]):
@@ -114,11 +115,11 @@ a = [[rand() for i in range(N)] for j in range(N)]
 #         J[cI][cI] = m.cos(theta)
 #         J[rI][cI] = m.sin(theta)
 #         J[cI][rI] = -m.sin(theta)
-    
+
 #     # 行列演算
 #     H = np.array(np.matrix(J.T)*np.matrix(H)*np.matrix(J))
 #     I = np.array(np.matrix(I)*np.matrix(J))
-    
+
 # # 固有値・固有ベクトルの格納
 # v, w = I.transpose(), []
 # for i in range(N):
