@@ -47,7 +47,7 @@ writer = Writer(fps=60)
 ani = animation.ArtistAnimation(fig, ims, interval=10)
 
 # plt.legend()
-ani.save("output.mp4", writer=writer)
+# ani.save("output.mp4", writer=writer)
 # plt.show()
 
 # plt.legend(loc="best")
