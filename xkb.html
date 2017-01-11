@@ -1,0 +1,72 @@
+<!---
+    xmodmapでキーボードレイアウトをカスタムできない問題をxkbで解決する
+-->
+<h1 id="対象">対象</h1>
+<ul>
+<li><p>Linux(Ubuntu)でキーマップを変更したい</p></li>
+<li><p>「<code>xmodmap</code>がちゃんと動かないんだけど？」</p></li>
+</ul>
+<p>というビギナーさん向けです. xkbについての詳しい解説は載せていません. 環境は Ubuntu 16.04 LTS を想定しています.</p>
+<h1 id="あらまし">あらまし</h1>
+<p>かつては, Linuxでキーボードレイアウトをカスタムしたいときは<code>xmodmap</code>を使うのがふつうでした. <code>xev</code>でキーコードを調べて, ホーム直下にある<code>.Xmodmap</code>に</p>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">keycode</span> 51 = Return</code></pre></div>
+<p>とでも書き込んでシェルで<code>xmodmap .Xmodmap</code>と打ち込んであげれば, 51番のキーコードを持つキーがReturn(Enter)キーになってくれるのです. この方法の解説はネットにたくさんあります.</p>
+<p>しかし最近のUbuntuではこの方法が有効ではなくなってしまいました. 設定した直後はちゃんと動くものの, しばらくすると元のキーマップに戻ってしまいます<a href="#fn1" class="footnoteRef" id="fnref1"><sup>1</sup></a>.</p>
+<p>最近のUbuntuではキーボードレイアウトの変更は<code>xkb</code>というものを使うことが推奨されているようです. <strong>さて, この<code>xkb</code>なるものの使い方は<code>xmodmap</code>とどのように異なるのでしょうか？</strong></p>
+<h2 id="個人的な動機">個人的な動機</h2>
+<p>(読み飛ばしてもらって頂いても結構です)</p>
+<p>最近HHKBの英字配列を自宅用に買いました. すこぶる快適です. これを受けて, 研究室にある日本語配列のキーボード(Libertouch)を英字配列に変えたくなりました. 「システム設定」→「テキスト入力」にて入力ソースの「日本語」を「英語(US)」に変えればいいだろう, と思いました. だいたいOKでした.</p>
+<p>しかし, 下の青いキーは思ったとおりに動作しませんでした.</p>
+<div class="figure">
+<img src="./images/key1.gif" alt="富士通コンポーネントさんより" />
+<p class="caption"><a href="http://www.vshopu.com/item/207Y-3001/">富士通コンポーネントさんより</a></p>
+</div>
+<p>右シフトのとなりはまあどうでもいいのですが, Backspaceのとなりは「\(backslash), |(bar)」になってほしいです. ちなみにHHKBの配列はこんなかんじです:</p>
+<div class="figure">
+<img src="./images/key2.gif" alt="PFUさんより" />
+<p class="caption"><a href="http://www.pfu.fujitsu.com/hhkeyboard/kb_collection/#hhkeyboard">PFUさんより</a></p>
+</div>
+<p>しかし残念なことに, 英字配列のキーは日本語配列よりも少ないので上の2つのキーコードが存在しません. <code>xmodmap</code>では辛うじて設定できたのですが, 前述の通り何者かによってキーマップが上書きされてしまいます. というわけで, キーコードが存在しないならしょうがない. 「システムの日本語配列の設定をUS配列と同等のものに置き換えてしまおう」と考えました<a href="#fn2" class="footnoteRef" id="fnref2"><sup>2</sup></a>. 調べると<code>xkb</code>なるものを使えばよいことがわかりました. というわけで, 本題です.</p>
+<h1 id="手順">手順</h1>
+<p>繰り返しになりますが, <code>xmodmap</code>では</p>
+<ul>
+<li><code>xev</code>でキーコードの取得</li>
+<li><code>.Xmodmap</code>に設定を書き込み</li>
+</ul>
+<p>という手順を踏むことになります. では<code>xkb</code>ではどのようにしてキーコードを取得すればよいのでしょうか？ まずはシェルで<code>setxkbmap -print</code>と入力してみましょう:</p>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">xkb_keymap</span> {
+    <span class="kw">xkb_keycodes</span>  { include <span class="st">&quot;evdev+aliases(qwerty)&quot;</span> };
+    <span class="kw">xkb_types</span>     { include <span class="st">&quot;complete&quot;</span>  };
+    <span class="kw">xkb_compat</span>    { include <span class="st">&quot;complete&quot;</span>  };
+    <span class="kw">xkb_symbols</span>   { include <span class="st">&quot;pc+jp&quot;</span>};
+    <span class="kw">xkb_geometry</span>  { include <span class="st">&quot;pc(pc105)&quot;</span> };
+};</code></pre></div>
+<p>こんなのが出てきました. <strong>注目すべきは<code>xkb_symbols</code>のところです.</strong> <code>pc+jp</code>は<code>pc</code>と<code>jp</code>というファイルを読み込むことを意味しています. つまりこの<code>pc</code>や<code>jp</code>が設定ファイルに相当するのです. もし英字配列に設定している方は<code>jp</code>が<code>us</code>になっているでしょう. ではこの設定ファイルはどこにあるのでしょうか. 自分の環境では<code>/usr/share/X11/xkb/symbols/</code>内にありました. では, 試しに<code>jp</code>内を覗いてみましょう:</p>
+<div class="figure">
+<img src="./images/key3.png" alt="諸事情によりバッファ名は「_jp」になってます" />
+<p class="caption">諸事情によりバッファ名は「_jp」になってます</p>
+</div>
+<p>もうなんとなくわかりましたね, <strong>「1, !」のキーコードは&lt;AE01&gt;, 「e, E」のキーコードは&lt;AD03&gt;です.</strong> これでめでたく<code>xkb</code>におけるキーコードを調べることができました. しかし, キーコード自体はそんなに重要ではありません. なぜかというと, キーマップを変更するには<strong>この設定ファイルにそのまま書き込んでしまえばよいからです<a href="#fn3" class="footnoteRef" id="fnref3"><sup>3</sup></a>.</strong> どこをどう変更するかは設定ファイルを眺めていればだいたいわかると思います. 自分はUS配列ぽくしたいのでこんなかんじにしました:</p>
+<div class="figure">
+<img src="./images/key4.png" />
+
+</div>
+<p>(自分にとって)大事なことは英字配列の設定ファイル<code>us</code>には存在しない&lt;AE13&gt;のキーコードが日本語配列の設定ファイル<code>jp</code>にはちゃんとあることです. これで上の青いキーを英字配列っぽくマップすることができました.</p>
+<h1 id="まとめ">まとめ</h1>
+<ul>
+<li><code>setxkbmap -print</code>の<code>xkb_symbols</code>を見て, どの設定ファイルが読み込まれているのかを確認(普通の日本語配列なら<code>jp</code>)</li>
+<li><code>/usr/share/X11/xkb/symbols/</code>内のお目当ての設定ファイルを見つける</li>
+<li>お好きに書き換えましょう</li>
+<li>再ログイン</li>
+</ul>
+<p>挙動がおかしくなってもすぐに元に戻せるようにバックアップを取っておきましょう. 自分は<code>jp</code>のバックアップを<code>_jp</code>としました.</p>
+<p>常識的に考えれば, <code>/usr/share/X11/...</code>なんてところにあるファイルを直接書き換えることはかなりの暴挙であるように思います<a href="#fn4" class="footnoteRef" id="fnref4"><sup>4</sup></a>. 可搬性はとっても悪いです. <code>xmodmap</code>における<code>.Xmodmap</code>みたいな間接的な設定ファイルを作ることはできるのかな？ 何にしても場当たり的であることは間違いないので, もっとクレバーな方法を知っているクレバーな方に是非教えていただきたいです.</p>
+<div class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>一説によるとFcitxが<code>xmodmap</code>が変更したキーマップを上書きしてしまうらしいです.<a href="#fnref1">↩</a></p></li>
+<li id="fn2"><p>絶対にもっと上手い方法があるはず...<a href="#fnref2">↩</a></p></li>
+<li id="fn3"><p>いや絶対にもっと上手い方法があるはず...<a href="#fnref3">↩</a></p></li>
+<li id="fn4"><p>いやいや絶対にもっと上手い方法があるはず...<a href="#fnref4">↩</a></p></li>
+</ol>
+</div>
