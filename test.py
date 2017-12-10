@@ -1,8 +1,10 @@
+import math
 import math as m
 import numpy as np
 from numpy.random import rand
 from scipy.integrate import dblquad
-
+from scipy.integrate import quad
+import matplotlib.pyplot as plt
 
 def f(x):
     return m.sin(x)
@@ -16,10 +18,40 @@ def h(x, y):
     return np.exp(-(x**2 + y**2))
 
 
-N, L = 2000, 100
-x, dx = np.linspace(-L / 2, L / 2, N), L / N
+def Z(m, l, z):
+    fact = math.sqrt(math.factorial(m) / math.factorial(l)) / math.factorial(m - l)
+    exp = z**(m - l) * math.exp(-0.25 * z**2)
+    return fact * exp
 
-a = [[rand() for i in range(N)] for j in range(N)]
+def Z_modified(m, l, z):
+    ans = 1
+    for k in range(m - l):
+        ans *= (m - k)**0.5 / (m - l - k) * z * math.exp(-0.25 * z**2 / (m - l))
+    return ans
+
+print()
+m, l, z = 300, 70, 6.9
+print(Z_modified(m, l, z))
+print(Z(m, l, z))
+
+# N, L = 2000, 100
+# x, dx = np.linspace(-L / 2, L / 2, N), L / N
+
+# a = [[rand() for i in range(N)] for j in range(N)]
+
+
+# def V(h):
+#     c = 2
+#     return np.tanh(h - c) + np.tanh(c)
+
+# x = np.linspace(0, 5, 100)
+
+# plt.xticks([])
+# plt.yticks([])
+# plt.xlabel(r'$h$')
+# plt.ylabel(r'$V(h)$')
+# plt.plot(x, V(x))
+# plt.show()
 
 # --- 微分 ---
 # def myImp():
@@ -33,14 +65,32 @@ a = [[rand() for i in range(N)] for j in range(N)]
 #     diff = np.gradient(g(x), dx)
 
 # --- 積分 ---
-# def myImp():
+# N, L = 100, 1
+# eps = 1e-5
+# x_arr = np.linspace(0 + eps, 1 - eps, N)
+# dx = L / N
+
+
+# def integrate(g=lambda x: m.sqrt(1 - x**2), h=lambda x: x):
+#     ans = 0
+#     for i in x_arr:
+#         ans += h(i)**2 / g(i) * dx
+#     return ans
+
+
+# print("before: {0}".format(integrate()))
+# print("after: {0}".format(integrate(g=lambda x: 0.5 * m.sqrt(2-x**2),
+#                                     h=lambda x: 1-x**2)))
+# print("correct: {0}".format(quad(lambda x: x**2 / m.sqrt(1 - x**2), 0, 1)[0]))
+
+
+# def myImp2():
 #     y, dy = np.linspace(-L/2, L/2, N), L / N
 #     ans = 0
 #     for index, X in enumerate(x):
 #         for Y in y[:index+1]:
 #             ans += dx * dy * h(X, Y)
 #     print(ans)
-
 
 # def spImp():
 #     ans = dblquad(
